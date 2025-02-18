@@ -124,6 +124,35 @@ function App() {
         })
     }
 
+    const handleGetVCs = async () => {
+        const filter = undefined
+
+        const options = {
+            store: ['snap']
+        }
+            
+            const metamaskAddress = account
+            const params = {
+            metamaskAddress,
+            filter,
+            options
+        }
+
+        const result = await window.ethereum.request({
+            method: 'wallet_invokeSnap',
+            params: {
+                snapId,
+                request: {
+                    method: 'getVCs',
+                    params: params
+                }
+            }
+        })
+
+        console.log(result)
+        return result
+    }
+
     return (
         <div>
             <button onClick={getAccount}>Enable Ethereum</button>
@@ -134,6 +163,9 @@ function App() {
             <p>Enter your date of birth: </p>
             <input type="text" placeholder="Your Date of Birth" onChange={e => {setDateOfBirth(e.target.value)}}/>
             <button onClick={() => handleCreateVC()}>Create Verifiable Credential</button>
+
+            <p>Get stored VCs from metamask</p>
+            <button onClick={() => handleGetVCs()}>Get VCs</button>
         </div>
     );
 }
