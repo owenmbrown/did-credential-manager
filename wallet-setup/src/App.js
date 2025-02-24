@@ -93,94 +93,69 @@ function App() {
         }
     }
 
-    const handleCreateVC = async () => {
-        const options = {
-            store: ['snap']
-        }
+    const options = { store: ['snap'] };
 
-        const vcValue = {
-            dateOfBirth: dateOfBirth
-        }
+const handleCreateVC = async () => {
+    try {
+        if (!account) throw new Error("MetaMask account not found.");
 
-        const metamaskAddress = account
-        
         const params = {
-            metamaskAddress,
+            metamaskAddress: account,
             vcKey: 'profile',
-            vcValue: vcValue,
+            vcValue: { dateOfBirth },
             credTypes: ['DOBCredential'],
             options
-        }
+        };
 
         await window.ethereum.request({
             method: 'wallet_invokeSnap',
-            params: {
-            snapId,
-            request: {
-                method: 'createVC',
-                params: params
-            }
-            }
-        })
+            params: { snapId, request: { method: 'createVC', params } }
+        });
+
+        console.log("VC created successfully.");
+    } catch (error) {
+        console.error("Error creating VC:", error);
     }
+};
 
-    const handleGetVCs = async () => {
-        const filter = undefined
+const handleGetVCs = async () => {
+    try {
+        if (!account) throw new Error("MetaMask account not found.");
 
-        const options = {
-            store: ['snap']
-        }
-            
-            const metamaskAddress = account
-            const params = {
-            metamaskAddress,
-            filter,
-            options
-        }
+        const params = { metamaskAddress: account, filter: undefined, options };
 
         const result = await window.ethereum.request({
             method: 'wallet_invokeSnap',
-            params: {
-                snapId,
-                request: {
-                    method: 'getVCs',
-                    params: params
-                }
-            }
-        })
+            params: { snapId, request: { method: 'getVCs', params } }
+        });
 
-        console.log(result)
-        return result
+        console.log("Retrieved VCs:", result);
+        return result;
+    } catch (error) {
+        console.error("Error fetching VCs:", error);
+        return null;
     }
+};
 
-    const handleDeleteAllVCs = async () => {
-        const filter = undefined
+const handleDeleteAllVCs = async () => {
+    try {
+        if (!account) throw new Error("MetaMask account not found.");
 
-        const options = {
-            store: ['snap']
-        }
-            
-            const metamaskAddress = account
-            const params = {
-            metamaskAddress,
-            filter,
-            options
-        }
+        const params = { metamaskAddress: account, filter: undefined, options };
 
         const result = await window.ethereum.request({
             method: 'wallet_invokeSnap',
-            params: {
-                snapId,
-                request: {
-                    method: 'deleteAllVCs',
-                    params: params
-                }
-            }
-        })
+            params: { snapId, request: { method: 'deleteAllVCs', params } }
+        });
 
-        console.log(result)
-        return result
+        console.log("All VCs deleted:", result);
+        return result;
+    } catch (error) {
+        console.error("Error deleting VCs:", error);
+        return null;
     }
+};
+
 
     return (
         <div>
