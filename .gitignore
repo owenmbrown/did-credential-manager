@@ -78,6 +78,5 @@ node_modules/
 
 .vscode
 yarn.lock
-.yarn
 .nvmrc
 dist/
