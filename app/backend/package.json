@@ -20,6 +20,10 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
+    "did-jwt": "^8.0.8",
+    "did-jwt-vc": "^4.0.6",
+    "ethereal": "^3.5.5",
+    "ethers": "^6.13.5",
     "expresss": "^0.0.0"
   }
 }
