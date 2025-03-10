@@ -6,4 +6,4 @@ const DidDocumentSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-export default mongoose.model("DidDocument", DidDocumentSchema);
+export default mongoose.model("DidDocument", DidDocumentSchema,"did-registry");

@@ -29,12 +29,12 @@ router.post("/issue-vc", async (req : Request, res : Response) => {
     
     // Sign a JWT VC
     const vcPayload = {
-        iss: "did:ethr:0xee83c802aA839F5B8340aE0158D3120f2bb5B311",
+        iss: "did:ethr:0x1A628DaEA6d6057c29F3c75a0AAab3D7Dd0121E2",
         sub: subjectDid,
         vc: { type: ["VerifiableCredential"], credentialSubject: claim }
     };
 
-    const privateKey = "0xb4b19e0c664f7186a908d7339f33c37e3224bc08ede4a3b532dd2f2f5a76ff97"; // Temporary stored key (an actual secure key shouldn't be stored in plaintext)
+    const privateKey = "0x7273e2122b20711c900115e9d2de01bc3d80b57191b4977137646329b615eee5"; // Temporary stored key (an actual secure key shouldn't be stored in plaintext)
     const token = jwt.sign(vcPayload, privateKey, { algorithm: "HS256" });
 
     res.json({ vc: token });
