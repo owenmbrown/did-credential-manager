@@ -3,31 +3,32 @@
 # Issuer
 Creates and signs Verifiable Credentials (VCs). Stores DID documents in MongoDB (for now). Provides VCs to users.
 ## Running
-1. Go to the isssuer/backend directory
-2. Install packages `npm install`
-3. Run with nodemon `npx nodemon`
-4. Use endpoints
-    * POST `localhost:5000/issuer/register-did`
-        - Creates a new DID & store it in MongoDB
-        - Returns a the did document
-          ```
-          {
-              "did": "did:ethr:0x5678...",
-              "privateKey": "SOME_PRIVATE_KEY"
-          }
-    * POST localhost:5000/issuer/issue-vc
-        -  Issue a Verifiable Credential (VC)
-        -  Include subject's did and the claim that is being made about them in the request body
-            ```
-            {
-              "subjectDid": "did:ethr:0x5678...",
-              "claim": { "age": 25 }
-            }
-        -  Returns the VC payload in the response body
-            ```
-            {
-              "vc": "eyJhbGciOiJI..."
-            }
+1. [Install](https://www.mongodb.com/docs/manual/installation/) and run mongodb locally.  Or run it on [Atlas](https://www.mongodb.com/cloud/atlas/register) (or similar) and update the mongo uri
+2. Go to the isssuer/backend directory
+3. Install packages `npm install`
+4. Run with nodemon `npx nodemon`
+## Endpoints
+ * POST `localhost:5000/issuer/register-did`
+     - Creates a new DID & store it in MongoDB
+     - Returns a the did document
+       ```
+       {
+           "did": "did:ethr:0x5678...",
+           "privateKey": "SOME_PRIVATE_KEY"
+       }
+ * POST localhost:5000/issuer/issue-vc
+     -  Issue a Verifiable Credential (VC)
+     -  Include subject's did and the claim that is being made about them in the request body
+         ```
+         {
+           "subjectDid": "did:ethr:0x5678...",
+           "claim": { "age": 25 }
+         }
+     -  Returns the VC payload in the response body
+         ```
+         {
+           "vc": "eyJhbGciOiJI..."
+         }
   
 # User
 Stores the issued VC in MetaMask via snap.
