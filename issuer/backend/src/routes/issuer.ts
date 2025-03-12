@@ -1,7 +1,21 @@
 import express, { Request, Response } from 'express';
-import jwt from "jsonwebtoken";
-import DidDocument from "../models/DidDocument";
-import { ethers } from "ethers";
+import { createVerifiableCredentialJwt, CredentialPayload, Issuer } from 'did-jwt-vc';
+import { EthrDID } from 'ethr-did';
+import { ethers } from 'ethers';
+import * as dotenv from 'dotenv';
+
+
+dotenv.config();
+const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
+const WALLET_PRIVATE_KEY = process.env.WALLET_PRIVATE_KEY;
+if (INFURA_PROJECT_ID == undefined) throw new Error("INFURA_PROJECT_ID not set in .env")
+if (WALLET_PRIVATE_KEY == undefined) throw new Error("WALLET_PRIVATE_KEY not set in .env")
+
+const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`);
+
+// Create an EthrDID object for the issuer
+const wallet = new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
+const issuerDid = new EthrDID({ identifier: wallet.address, privateKey: WALLET_PRIVATE_KEY }) as Issuer;
 
 const router = express.Router();
 
@@ -9,35 +23,34 @@ router.get("/test", (req : Request, res : Response) => {
     res.send("Hello world!")
 });
 
-// Create a new DID & store it in MongoDB
-router.post("/register-did", async (req : Request, res : Response) => {
-    const wallet = ethers.Wallet.createRandom();  // Generate a random Ethereum key
-    const did = `did:ethr:${wallet.address}`;
-    
-    const newDid = new DidDocument({
-        did,
-        publicKey: wallet.publicKey
-    });
-
-    await newDid.save();
-    res.json({ did, privateKey: wallet.privateKey }); // Private key should be stored securely
-});
-
 // Issue a Verifiable Credential (VC)
 router.post("/issue-vc", async (req : Request, res : Response) => {
     const { subjectDid, claim } = req.body;
+
+    // Validate inputs
+    if (!subjectDid || typeof subjectDid !== "string" || !subjectDid.startsWith("did:ethr:")) {
+        res.status(400).json({ error: "Invalid subject DID" });
+        return;
+    }
+
+    if (!claim || typeof claim !== "object" || Object.keys(claim).length === 0) {
+        res.status(400).json({ error: "Claim must be a non-empty object" });
+        return
+    }
+
     
-    // Sign a JWT VC
-    const vcPayload = {
-        iss: "did:ethr:0x1A628DaEA6d6057c29F3c75a0AAab3D7Dd0121E2",
-        sub: subjectDid,
-        vc: { type: ["VerifiableCredential"], credentialSubject: claim }
+    const vcPayload: CredentialPayload = {
+        issuer: `did:ethr:${wallet.address}`,  // Issuer DID
+        subject: subjectDid,  // The subject's DID
+        issuanceDate: new Date().toISOString(), // Required field
+        '@context':['https://www.w3.org/2018/credentials/v1'], // Required field
+        type: ["VerifiableCredential"],
+        credentialSubject: claim,
     };
 
-    const privateKey = "0x7273e2122b20711c900115e9d2de01bc3d80b57191b4977137646329b615eee5"; // Temporary stored key (an actual secure key shouldn't be stored in plaintext)
-    const token = jwt.sign(vcPayload, privateKey, { algorithm: "HS256" });
+    const vcJwt = await createVerifiableCredentialJwt(vcPayload, issuerDid);
 
-    res.json({ vc: token });
+    res.json({ vc: vcJwt });
 });
 
 export default router;
