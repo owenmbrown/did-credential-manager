@@ -21,7 +21,6 @@
     "ethr-did": "^3.0.25",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.12.1",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2"
   },
