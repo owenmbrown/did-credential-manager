@@ -46,7 +46,7 @@ When the Ethereum node is ready, update verifier to use veramo to resolve DID do
 Update the Issuer to register DIDs on-chain instead of storing them in MongoDB.
 
 # Registering a did:ethr
-Any ethereum wallet that wants to issue verifiable credentials needs to register as a did:ethr on the ethrDidRegistry on the blockchain.  This is so that the did of the issuer can be resolved
+This is for testing storage on the [ethr-did-registry](github.com/uport-project/ethr-did-registry).  Since all ethereum addresses are already identifiers without needing to register, this isn't nessisary for using the other endpoints.
 ## Using
 1. Create an ethereum wallet in metamask, or use an existing wallet.
 2. Add at least 0.001 eth (1-3 usd) to that wallet (mininum needed to use faucet)
@@ -63,5 +63,3 @@ Any ethereum wallet that wants to issue verifiable credentials needs to register
    5. Warning: It's important to never commit these keys github
 6. Register your did:ethr `npm start -- -r` (you need funds on the testnet for this)
 7. Verify that your did is registered correctly `npm start -- -v`
-8. You only need to register once
-9. Now this ethereum wallet can be used as an issuer for verifiable credentials
