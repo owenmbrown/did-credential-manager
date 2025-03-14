@@ -3,19 +3,10 @@
 # Issuer
 Creates and signs Verifiable Credentials (VCs). Stores DID documents in MongoDB (for now). Provides VCs to users.
 ## Running
-1. [Install](https://www.mongodb.com/docs/manual/installation/) and run mongodb locally.  Or run it on [Atlas](https://www.mongodb.com/cloud/atlas/register) (or similar) and update the mongo uri
-2. Go to the isssuer/backend directory
-3. Install packages `npm install`
-4. Run with nodemon `npx nodemon`
+1. Go to the isssuer/backend directory
+2. Install packages `npm install`
+3. Run with nodemon `npx nodemon`
 ## Endpoints
- * POST `localhost:5000/issuer/register-did`
-     - Creates a new DID & store it in MongoDB
-     - Returns a the did document
-       ```
-       {
-           "did": "did:ethr:0x5678...",
-           "privateKey": "SOME_PRIVATE_KEY"
-       }
  * POST `localhost:5000/issuer/issue-vc`
      -  Issue a Verifiable Credential (VC)
      -  Include subject's did and the claim that is being made about them in the request body
@@ -35,15 +26,92 @@ Stores the issued VC in MetaMask via snap.
 
 # App (Verifier)
 Requests the user's VC and verifies it.
-Resolves the user's DID using MongoDB (later replace with Ethereum).
-
-# Database (MongoDB)
-Temporarily stores DID documents.
-Allows easy transition to Ethereum by keeping the same DID resolution interface.
-
-# Transition to Ethereum
-When the Ethereum node is ready, update verifier to use veramo to resolve DID documents from the EthrDIDRegistry contract instead of MongoDB.
-Update the Issuer to register DIDs on-chain instead of storing them in MongoDB.
+Resolves the user's DID using ethereum did registry.
+## Backend
+ * POST localhost:5001/verifier/verify-vc
+      - Verify a verifiable credential
+      - Include the verifiable credential in the request body
+          ```
+          {
+            "vc": "eyJhbGciOiJI..."
+          } 
+      - Verifies the credendial, and returns the data
+     ```
+     {
+         "verified": true,
+         "payload": {
+             "verified": true,
+             "payload": {
+                 "vc": {
+                     "@context": [
+                         "https://www.w3.org/2018/credentials/v1"
+                     ],
+                     "type": [
+                         "VerifiableCredential"
+                     ],
+                     "credentialSubject": {
+                         "age": 25
+                     }
+                 },
+                 "subject": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3",
+                 "nbf": 1741829021,
+                 "iss": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3"
+             },
+             "didResolutionResult": {
+                 "didDocumentMetadata": {},
+                 "didResolutionMetadata": {
+                     "contentType": "application/did+json"
+                 },
+                 "didDocument": {
+                     "id": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3",
+                     "verificationMethod": [
+                         {
+                             "id": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3#controller",
+                             "type": "EcdsaSecp256k1RecoveryMethod2020",
+                             "controller": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3",
+                             "blockchainAccountId": "eip155:1:0xfe4568038759b739D6ebE05a03453b6c989D71e3"
+                         }
+                     ],
+                     "authentication": [
+                         "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3#controller"
+                     ],
+                     "assertionMethod": [
+                         "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3#controller"
+                     ]
+                 }
+             },
+             "issuer": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3",
+             "signer": {
+                 "id": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3#controller",
+                 "type": "EcdsaSecp256k1RecoveryMethod2020",
+                 "controller": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3",
+                 "blockchainAccountId": "eip155:1:0xfe4568038759b739D6ebE05a03453b6c989D71e3"
+             },
+             "jwt": "eyJhbGciOiJFUzI1NkstUiIsInR5cCI6IkpXVCJ9.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImFnZSI6MjV9fSwic3ViamVjdCI6ImRpZDpldGhyOjB4ZmU0NTY4MDM4NzU5YjczOUQ2ZWJFMDVhMDM0NTNiNmM5ODlENzFlMyIsIm5iZiI6MTc0MTgyOTAyMSwiaXNzIjoiZGlkOmV0aHI6MHhmZTQ1NjgwMzg3NTliNzM5RDZlYkUwNWEwMzQ1M2I2Yzk4OUQ3MWUzIn0.ENIG65J_gAbbWoH7qgqwjT6hs5Fe1teITAmYr1Fs_fc66jQZlQ4a6RyDVX37hFgMEpS5ZV8vzA_e92QwU1H6BQA",
+             "policies": {},
+             "verifiableCredential": {
+                 "subject": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3",
+                 "credentialSubject": {
+                     "age": 25
+                 },
+                 "issuer": {
+                     "id": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3"
+                 },
+                 "type": [
+                     "VerifiableCredential"
+                 ],
+                 "@context": [
+                     "https://www.w3.org/2018/credentials/v1"
+                 ],
+                 "issuanceDate": "2025-03-13T01:23:41.000Z",
+                 "proof": {
+                     "type": "JwtProof2020",
+                     "jwt": "eyJhbGciOiJFUzI1NkstUiIsInR5cCI6IkpXVCJ9.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImFnZSI6MjV9fSwic3ViamVjdCI6ImRpZDpldGhyOjB4ZmU0NTY4MDM4NzU5YjczOUQ2ZWJFMDVhMDM0NTNiNmM5ODlENzFlMyIsIm5iZiI6MTc0MTgyOTAyMSwiaXNzIjoiZGlkOmV0aHI6MHhmZTQ1NjgwMzg3NTliNzM5RDZlYkUwNWEwMzQ1M2I2Yzk4OUQ3MWUzIn0.ENIG65J_gAbbWoH7qgqwjT6hs5Fe1teITAmYr1Fs_fc66jQZlQ4a6RyDVX37hFgMEpS5ZV8vzA_e92QwU1H6BQA"
+                 }
+             }
+         }
+     } 
+     
 
 # Registering a did:ethr
 This is for testing storage on the [ethr-did-registry](github.com/uport-project/ethr-did-registry).  Since all ethereum addresses are already identifiers without needing to register, this isn't nessisary for using the other endpoints.
