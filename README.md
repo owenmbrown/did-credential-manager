@@ -29,6 +29,7 @@ Requests the user's VC and verifies it.
 Resolves the user's DID using ethereum did registry.
 ## Backend
  * POST localhost:5001/verifier/verify-vc
+      - Depriciated: use `verifier/verify-vp` instead
       - Verify a verifiable credential
       - Include the verifiable credential in the request body
           ```
@@ -111,7 +112,40 @@ Resolves the user's DID using ethereum did registry.
              }
          }
      } 
-     
+
+* GET localhost:5001/verifier/generate-challenge
+     - Generated a challenge string, for the user to include in the verifiable presentation.
+     - Each challenge expires after a minute, and can only be used once, so this prevents replay attacks.
+     - Returns the challenge in the response body
+     ```
+     {
+         "challenge": "PAdd2emrfP9AImxelCtfTJgGVQW6IckF9Wtf7cpo7HI"
+     }
+
+* POST localhost:5001/verifier/verify-vp
+     - Verify a verifiable presentation (VP), and verify the verifiable credential (VC) inside.
+     - Include the verifiable presentation in the request body
+          ```
+          {
+            "vp": "eyJhbGciOiJI..."
+          } 
+     - Will return an error the challange is incorrect or expired
+     - Will return an error if the issuer of the VP and the subject of the VC don't match
+     - Will return an error if either the VP or the VC is invalid
+       ```
+       {
+            "verified": false,
+            "error": "..."
+       }
+               
+     - If successful, will return the VC contained in the VP
+       ```
+       {
+            "verified": true,
+            "payload": {
+                 ...
+            }
+       }
 
 # Registering a did:ethr
 This is for testing storage on the [ethr-did-registry](github.com/uport-project/ethr-did-registry).  Since all ethereum addresses are already identifiers without needing to register, this isn't nessisary for using the other endpoints.
