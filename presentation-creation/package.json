@@ -1,0 +1,20 @@
+{
+  "name": "presentation-creation",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "did-jwt-vc": "^4.0.7",
+    "dotenv": "^16.4.7",
+    "ethers": "^6.13.5",
+    "ethr-did": "^3.0.26",
+    "ts-node": "^10.9.2"
+  }
+}
