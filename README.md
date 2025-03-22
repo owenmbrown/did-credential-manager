@@ -21,8 +21,71 @@ Creates and signs Verifiable Credentials (VCs). Stores DID documents in MongoDB 
            "vc": "eyJhbGciOiJI..."
          }
   
-# User
-Stores the issued VC in MetaMask via snap.
+# MetaMask Snap RPC Methods
+This MetaMask Snap provides several RPC methods that interact with a decentralized identity (DID) and verifiable credentials (VC):
+
+## `create-did`
+This method generates a new Decentralized Identifier (DID) of type `did:ethr` by creating a new Ethereum wallet. It stores the new DID (in the form of the wallet's address and private key) in the Snap's secure storage for future use. A dialog is displayed confirming the creation of the DID.
+### Usage
+```
+await invokeSnap({
+  method: 'create-did'
+});
+```
+### Response
+Returns the address of the newly created DID.
+```
+{
+  "did": "0x1234567890abcdef1234567890abcdef12345678"
+}
+```
+
+## `get-did`
+This method retrieves the `did:ethr` stored in Snap’s secure storage. If no DID has been created or stored yet, it returns an empty string
+### Usage
+```
+const result = await invokeSnap({
+  method: 'get-did'
+});
+console.log(result.did);
+```
+### Response
+Returns the DID address if available, otherwise returns an empty string.
+```
+{
+  "did": "0x1234567890abcdef1234567890abcdef12345678"
+}
+```
+
+## `store-vc`
+This method stores a Verifiable Credential (VC) associated with the current DID in Snap's secure storage. The VC is passed as a parameter and is associated with the DID. If no DID is found in the storage, the method will display an alert informing the user that no DID exists. A confirmation dialog is shown upon successfully storing the VC.
+### Usage
+```
+await invokeSnap({
+  method: 'store-vc',
+  params: { vc: "your-verifiable-credential" }
+});
+```
+### Response
+Doesn't return anything.
+
+## `get-vp`
+This method generates a Verifiable Presentation (VP) by signing the stored Verifiable Credential (VC) with the DID’s private key. The method takes a `challenge` as a parameter and creates a VP containing the VC and the provided challenge. If the challenge is missing or no VC is stored in the Snap, an alert is shown to the user.
+### Usage
+```
+await invokeSnap({
+  method: 'get-vp',
+  params: { challenge: "unique-challenge-string" }
+});
+```
+### Response
+Returns the signed JWT representing the Verifiable Presentation. If any issue occurs (e.g., missing challenge or missing VC), an alert is shown.
+```
+{
+  "vp": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2cCI6eyJjYXRhbCI6Imh0dHBzOi8vZGVzY3JpcH..."} 
+}
+```
+
 
 # App (Verifier)
 Requests the user's VC and verifies it.
