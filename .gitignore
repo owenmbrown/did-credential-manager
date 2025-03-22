@@ -76,6 +76,25 @@ node_modules/
 .yarn/install-state.gz
 .pnp.*
 
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/.swc/
+
+# env files
+.env
+.env.*
+!.env.example
+
+# misc
+.DS_Store
+*.log
+
+# testing
+/coverage
+
 .vscode
 yarn.lock
 .nvmrc
