@@ -48,8 +48,16 @@ await invokeSnap({
 Returns the address of the newly created DID.
 ```
 {
+  "success": true,
   "did": "0x1234567890abcdef1234567890abcdef12345678"
 }
+```
+Can fail if the user rejects the dialogue
+```
+{
+  "success": false,
+  "message": "some message about the failure"
+ }
 ```
 
 ## `get-did`
@@ -62,11 +70,19 @@ const result = await invokeSnap({
 console.log(result.did);
 ```
 ### Response
-Returns the DID address if available, otherwise returns an empty string.
+Returns the DID address
 ```
 {
+  "success": true,
   "did": "0x1234567890abcdef1234567890abcdef12345678"
 }
+```
+Can fail if the user rejects the dialogue, or if the did isn't stored
+```
+{
+  "success": false,
+  "message": "some message about the failure"
+ }
 ```
 
 ## `store-vc`
@@ -94,8 +110,16 @@ await invokeSnap({
 Returns the signed JWT representing the Verifiable Presentation. If any issue occurs (e.g., missing challenge or missing VC), an alert is shown.
 ```
 {
+  "success": true,
   "vp": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2cCI6eyJjYXRhbCI6Imh0dHBzOi8vZGVzY3JpcH..."} 
 }
+```
+Can fail if the user rejects the dialogue, or if no challenge is included, or if the vc isn't stored
+```
+{
+  "success": false,
+  "message": "some message about the failure"
+ }
 ```
 
 

@@ -1,9 +1,11 @@
 import type { OnRpcRequestHandler } from '@metamask/snaps-sdk';
-import { Box, Text, Bold } from '@metamask/snaps-sdk/jsx';
+import { Box, Text, Bold, Heading } from '@metamask/snaps-sdk/jsx';
 
-import { createVerifiablePresentationJwt, JwtPresentationPayload, Issuer } from 'did-jwt-vc';
+import { createVerifiablePresentationJwt, JwtPresentationPayload, Issuer, verifyCredential } from 'did-jwt-vc';
 import { EthrDID } from 'ethr-did';
 import { ethers, hexlify, toUtf8Bytes, toUtf8String, verifyMessage } from 'ethers';
+import { Resolver } from 'did-resolver';
+import { getResolver as getEthrResolver } from 'ethr-did-resolver';
 
 type PassMessageParams = {
     message: string; // Message parameter
@@ -90,254 +92,300 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                 },
             });
         case 'create-did': // creates a new did:ethr and stores it in snap storage
-            // create a new did:ethr
-            const wallet = ethers.Wallet.createRandom();
-    
-            // Extract keys and address
-            const privateKey = wallet.privateKey;
-            // const publicKey = wallet.publicKey;
-            const address = wallet.address;
-
-            // Update the state storage to include
-            await snap.request({
-                method: "snap_manageState",
-                params: {
-                operation: "update",
-                newState: { 
-                    did: {
-                        privateKey,
-                        address,
-                        vc: ""
+            try {
+                // ask user for consent
+                const approval = await snap.request({
+                    method: 'snap_dialog',
+                    params: {
+                    type: 'confirmation',
+                    content: (
+                        <Box>
+                            <Heading>Would you like to create a new did:ethr?</Heading>
+                            <Text>This identity can be used to create and store verifiable credentials.</Text>
+                            <Text>Warning: This will overwrite any previous dids that have been stored</Text>
+                        </Box>
+                    ),
+                    },
+                }); 
+                // return if user rejects prompt
+                if (approval === false) {
+                    return {
+                        success: false,
+                        message: "user rejected dialogue"
                     }
-                },
-                },
-            });
+                }
 
-            await snap.request({
-                method: 'snap_dialog',
-                params: {
-                type: 'alert',
-                content: (
-                    <Box>
-                        <Text>
-                            <Bold>Created a new identifier did:ethr:{address}</Bold>
-                        </Text>
-                    </Box>
-                ),
-                },
-            }); 
+                // create a new did:ethr
+                const wallet = ethers.Wallet.createRandom();
+        
+                // Extract keys and address
+                const privateKey = wallet.privateKey;
+                // const publicKey = wallet.publicKey;
+                const address = wallet.address;
 
-            return {
-                did: address
+                // Update the state storage to include
+                await snap.request({
+                    method: "snap_manageState",
+                    params: {
+                    operation: "update",
+                    newState: { 
+                        did: {
+                            privateKey,
+                            address,
+                            vc: ""
+                        }
+                    },
+                    },
+                });
+
+                // show a success dialogue
+                await snap.request({
+                    method: 'snap_dialog',
+                    params: {
+                    type: 'alert',
+                    content: (
+                        <Box>
+                            <Heading>Created a new identifier</Heading>
+                            <Text>
+                                <Bold>did:ethr:{address}</Bold>
+                            </Text>
+                        </Box>
+                    ),
+                    },
+                }); 
+
+                return {
+                    success: true,
+                    did: address
+                }
+            }
+            catch (error) {
+                console.log(error)
+                return {
+                    success: false,
+                    message: "runtime error",
+                }
             }
         case 'get-did': {
             // returns the stored did:ethr if it exists
 
-            const persistedData = await snap.request({
-                method: "snap_manageState",
-                params: { operation: "get" },
-            })
-
-            if (persistedData == null || persistedData == undefined) {
-                return {
-                    did:""
-                }
-            }
-            else {
-                return {
-                    did: (persistedData as StorageContents).did.address
-                }
-            }
-        }
-        case 'store-vc': {
-            const params = request.params as StoreVCParams;
-
-            const persistedData = await snap.request({
-                method: "snap_manageState",
-                params: { operation: "get" },
-            })
-
-            if (persistedData == null || persistedData == undefined) {
-                return snap.request({
-                    method: 'snap_dialog',
-                    params: {
-                    type: 'alert',
-                    content: (
-                        <Box>
-                            <Text>
-                                <Bold>Credential store failed.  No did:ethr found</Bold>
-                            </Text>
-                        </Box>
-                    ),
-                    },
-                }); 
-            }
-
-            const updatedStorage = persistedData as StorageContents;
-
-            // update the VC in the object
-            updatedStorage.did.vc = params.vc
-            
-            // store the VC in secure storage
-            await snap.request({
-                method: "snap_manageState",
-                params: {
-                operation: "update",
-                newState: updatedStorage,
-                },
-            })
-
-            // TODO actually confirm success
-
-            // display a confirmation alert
-            return snap.request({
-                method: 'snap_dialog',
-                params: {
-                type: 'alert',
-                content: (
-                    <Box>
-                        <Text>
-                            <Bold>Credential store successfully</Bold>
-                        </Text>
-                    </Box>
-                ),
-                },
-            }); 
-        }
-        case 'get-vp': {
-            // read the paramaters of the rpc request to get the challenge
-            const params = request.params as GetVPParams;
-            const challenge = params.challenge;
-            // check if the challenge was actually set
-            if (challenge == null || challenge == undefined) {
-                return snap.request({
-                    method: 'snap_dialog',
-                    params: {
-                    type: 'alert',
-                    content: (
-                        <Box>
-                            <Text>
-                                <Bold>No challenge was provided in rpc request</Bold>
-                            </Text>
-                        </Box>
-                    ),
-                    },
-                }); 
-            }
-            
             // get current state of snap secure storage
             const persistedData = await snap.request({
                 method: "snap_manageState",
                 params: { operation: "get" },
             })
-            
-            // verify data is formatted correctly
-            if (persistedData == null || persistedData == undefined || (persistedData as StorageContents).did.vc == "") {
-                return snap.request({
+
+            if (persistedData == null || persistedData == undefined) {
+                // if there is no data in storage, return failure
+                return {
+                    success: false,
+                    message: "no did is stored"
+                }
+            }
+            else {
+                // return the did:ethr address
+                return {
+                    success: true,
+                    did: (persistedData as StorageContents).did.address
+                }
+            }
+        }
+        case 'store-vc': {
+            try {
+                // get the parans passed by the dapp
+                const params = request.params as StoreVCParams;
+                const vc = params.vc;
+
+                // get current state of snap secure storage
+                const persistedData = await snap.request({
+                    method: "snap_manageState",
+                    params: { operation: "get" },
+                })
+
+                if (persistedData == null || persistedData == undefined) {
+                    // if the data doesn't exist, display a dialogue and return failure
+                    await snap.request({
+                        method: 'snap_dialog',
+                        params: {
+                        type: 'alert',
+                        content: (
+                            <Box>
+                                <Text>
+                                    <Bold>Credential store failed.  No did:ethr found</Bold>
+                                </Text>
+                            </Box>
+                        ),
+                        },
+                    }); 
+                    
+                    return {
+                        success: false,
+                        message: "no did is stored"
+                    }
+                }
+
+                // cast the stored data into our object to manipulate
+                const updatedStorage = persistedData as StorageContents;
+
+                // // initialize did:ethr resolver
+                // const resolver = new Resolver({
+                //     ...getEthrResolver({ infuraProjectId: INFURA_PROJECT_ID }),
+                // });
+                
+                // // Verify the VC JWT
+                // const verificationResult = await verifyCredential(vc, resolver);
+
+                // console.log(verificationResult);
+
+                // ask user for consent
+                const approval = await snap.request({
+                    method: 'snap_dialog',
+                    params: {
+                    type: 'confirmation',
+                    content: (
+                        <Box>
+                            <Heading>Would you like to store this verifiable credential?</Heading>
+                            <Text>Using the identity did:ethr:{updatedStorage.did.address} </Text>
+                            <Text>placeholder</Text>
+                        </Box>
+                    ),
+                    },
+                }); 
+                // return if user rejects prompt
+                if (approval === false) {
+                    return {
+                        success: false,
+                        message: "user rejected dialogue"
+                    }
+                }
+
+                // update the VC in the object
+                updatedStorage.did.vc = vc
+                
+                // store the VC in secure storage
+                await snap.request({
+                    method: "snap_manageState",
+                    params: {
+                    operation: "update",
+                    newState: updatedStorage,
+                    },
+                })
+
+                // display a confirmation alert
+                await snap.request({
                     method: 'snap_dialog',
                     params: {
                     type: 'alert',
                     content: (
                         <Box>
                             <Text>
-                                <Bold>Could not find any credentials stored in your wallet</Bold>
+                                <Bold>Credential stored successfully</Bold>
                             </Text>
                         </Box>
                     ),
                     },
                 }); 
-            }
 
-            // read values from the storage object we received
-            const storedData = persistedData as StorageContents;
-            const wallerPrivateKey = storedData.did.privateKey;
-            const vc = storedData.did.vc;
-            
-            // initialized rpc provider
-            const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`);
-
-            // Create an EthrDID object for the issuer
-            const wallet = new ethers.Wallet(wallerPrivateKey, provider);
-            const holderDid = new EthrDID({ identifier: wallet.address, privateKey: wallerPrivateKey }) as Issuer;
-            
-            // create the verifiable presentation payload
-            const presentationPayload: JwtPresentationPayload = {
-                vp: {
-                    '@context':['https://www.w3.org/2018/credentials/v1'],
-                    type: ['VerifiablePresentation'],
-                    verifiableCredential: [vc],
-                    challenge
+                return {
+                    success: true
                 }
-            };
-
-            // Sign the presentation with the holder's private key
-            const signedPresentationJwt = await createVerifiablePresentationJwt(
-                presentationPayload,
-                holderDid
-            );
-
-            return signedPresentationJwt;
+            }
+            catch (error) {
+                console.log(error)
+                return {
+                    success: false,
+                    message: "runtime error",
+                }
+            }
         }
-        case 'test_store': {
-            // const newState = request.params?.newState || {};
-            // return snap.request({
-            //   method: 'snap_manageState',
-            //   params: { 
-            //     operation: 'update',
-            //     newState: { hello: "world" }
-            //   },
-            // });
-            console.log("test_store 1")
+        case 'get-vp': {
+            try {
+                // read the paramaters of the rpc request to get the challenge
+                const params = request.params as GetVPParams;
+                const challenge = params.challenge;
+                // check if the challenge was actually set
+                if (challenge == null || challenge == undefined) {
+                    return {
+                        success: false,
+                        message: "missing challenge"
+                    }
+                }
+                
+                // get current state of snap secure storage
+                const persistedData = await snap.request({
+                    method: "snap_manageState",
+                    params: { operation: "get" },
+                })
+                
+                // verify data is formatted correctly
+                if (persistedData == null || persistedData == undefined || (persistedData as StorageContents).did.vc == "") {
+                    return {
+                        success: false,
+                        message: "no vc found in data"
+                    }
+                }
 
-            // Persist some data.
-            await snap.request({
-                method: "snap_manageState",
-                params: {
-                operation: "update",
-                newState: { hello: "world" },
-                },
-            })
-            
-            console.log("test_store 2")
+                // ask user for consent
+                const approval = await snap.request({
+                    method: 'snap_dialog',
+                    params: {
+                    type: 'confirmation',
+                    content: (
+                        <Box>
+                            <Heading>Would you like to present this app with a verifiable presentation?</Heading>
+                            <Text>The app can use this to verify a claim about you.</Text>
+                            <Text>This presentation will expire in 1 minute.</Text>
+                        </Box>
+                    ),
+                    },
+                }); 
+                // return if user rejects prompt
+                if (approval === false) {
+                    return {
+                        success: false,
+                        message: "user rejected dialogue"
+                    }
+                }
 
-            // // At a later time, get the stored data.
-            const persistedData = await snap.request({
-                method: "snap_manageState",
-                params: { operation: "get" },
-            })
+                // read values from the storage object we received
+                const storedData = persistedData as StorageContents;
+                const wallerPrivateKey = storedData.did.privateKey;
+                const vc = storedData.did.vc;
 
-            console.log("persistedData:")
-            console.log(persistedData)
-            // { hello: "world" }
+                // initialized rpc provider
+                const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`);
 
-            // If data storage is no longer necessary, clear it.
-            return snap.request({
-                method: "snap_manageState",
-                params: {
-                operation: "clear",
-                },
-            })
-        }
-        case 'pass_message': {
-            const params = request.params as PassMessageParams; 
-            console.log(params.message)
-            return snap.request({
-                method: 'snap_dialog',
-                params: {
-                type: 'confirmation',
-                content: (
-                    <Box>
-                    <Text>
-                        {params.message}
-                    </Text>
-                    </Box>
-                ),
-                },
-            });
-        }
-        case 'return_test': {
-            return {
-                message: "hello bro"
+                // Create an EthrDID object for the issuer
+                const wallet = new ethers.Wallet(wallerPrivateKey, provider);
+                const holderDid = new EthrDID({ identifier: wallet.address, privateKey: wallerPrivateKey }) as Issuer;
+                
+                // create the verifiable presentation payload
+                const presentationPayload: JwtPresentationPayload = {
+                    vp: {
+                        '@context':['https://www.w3.org/2018/credentials/v1'],
+                        type: ['VerifiablePresentation'],
+                        verifiableCredential: [vc],
+                        challenge
+                    }
+                };
+
+                // Sign the presentation with the holder's private key
+                const signedPresentationJwt = await createVerifiablePresentationJwt(
+                    presentationPayload,
+                    holderDid
+                );
+
+                return {
+                    success: true,
+                    vp: signedPresentationJwt
+                }
+            }
+            catch (error) {
+                console.log(error)
+                return {
+                    success: false,
+                    message: "runtime error",
+                }
             }
         }
         default:
