@@ -26,6 +26,16 @@ Issues a Verifiable Credential (VC) about a subject
 # MetaMask Snap RPC Methods
 This MetaMask Snap provides several RPC methods that interact with a decentralized identity (DID) and verifiable credentials (VC):
 
+## Running
+### Running snap & example frontend
+This will start the snap and the example frontend implementation to interact with it
+1. `cd snap`
+2. `yarn start`
+### Running snap
+This will start just the snap
+1. `cd snap/packages/snap`
+2. `yarn start`
+
 ## `create-did`
 This method generates a new Decentralized Identifier (DID) of type `did:ethr` by creating a new Ethereum wallet. It stores the new DID (in the form of the wallet's address and private key) in the Snap's secure storage for future use. A dialog is displayed confirming the creation of the DID.
 ### Usage
