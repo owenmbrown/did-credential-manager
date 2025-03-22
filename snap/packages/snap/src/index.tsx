@@ -293,19 +293,10 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
             const challenge = params.challenge;
             // check if the challenge was actually set
             if (challenge == null || challenge == undefined) {
-                return snap.request({
-                    method: 'snap_dialog',
-                    params: {
-                    type: 'alert',
-                    content: (
-                        <Box>
-                            <Text>
-                                <Bold>No challenge was provided in rpc request</Bold>
-                            </Text>
-                        </Box>
-                    ),
-                    },
-                }); 
+                return {
+                    success: false,
+                    message: "missing challenge"
+                }
             }
             
             // get current state of snap secure storage
@@ -316,19 +307,32 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
             
             // verify data is formatted correctly
             if (persistedData == null || persistedData == undefined || (persistedData as StorageContents).did.vc == "") {
-                return snap.request({
-                    method: 'snap_dialog',
-                    params: {
-                    type: 'alert',
-                    content: (
-                        <Box>
-                            <Text>
-                                <Bold>Could not find any credentials stored in your wallet</Bold>
-                            </Text>
-                        </Box>
-                    ),
-                    },
-                }); 
+                return {
+                    success: false,
+                    message: "no vc found in data"
+                }
+            }
+
+            // ask user for consent
+            const result = await snap.request({
+                method: 'snap_dialog',
+                params: {
+                type: 'confirmation',
+                content: (
+                    <Box>
+                        <Heading>Would you like to present this app with a verifiable presentation?</Heading>
+                        <Text>The app can use this to verify a claim about you.</Text>
+                        <Text>This presentation will expire in 1 minute.</Text>
+                    </Box>
+                ),
+                },
+            }); 
+            // return if user rejects prompt
+            if (result === false) {
+                return {
+                    success: false,
+                    message: "user rejected dialogue"
+                }
             }
 
             // read values from the storage object we received
@@ -359,7 +363,10 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                 holderDid
             );
 
-            return signedPresentationJwt;
+            return {
+                success: true,
+                vp: signedPresentationJwt
+            }
         }
         default:
             throw new Error('Method not found.');

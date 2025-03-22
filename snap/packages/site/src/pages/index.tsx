@@ -134,7 +134,7 @@ const Index = () => {
   const handleSendGetVP = async () => {
     const result = await invokeSnap({
       method: 'get-vp',
-      params: { challange: "12345" }
+      params: { challenge: "12345" }
   });
     console.log(result)
   };
