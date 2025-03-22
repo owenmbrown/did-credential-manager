@@ -98,6 +98,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
             // const publicKey = wallet.publicKey;
             const address = wallet.address;
 
+            // Update the state storage to include
             await snap.request({
                 method: "snap_manageState",
                 params: {
