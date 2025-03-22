@@ -94,7 +94,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
         case 'create-did': // creates a new did:ethr and stores it in snap storage
             try {
                 // ask user for consent
-                const result = await snap.request({
+                const approval = await snap.request({
                     method: 'snap_dialog',
                     params: {
                     type: 'confirmation',
@@ -108,7 +108,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                     },
                 }); 
                 // return if user rejects prompt
-                if (result === false) {
+                if (approval === false) {
                     return {
                         success: false,
                         message: "user rejected dialogue"
@@ -238,7 +238,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                 // console.log(verificationResult);
 
                 // ask user for consent
-                const result = await snap.request({
+                const approval = await snap.request({
                     method: 'snap_dialog',
                     params: {
                     type: 'confirmation',
@@ -252,7 +252,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                     },
                 }); 
                 // return if user rejects prompt
-                if (result === false) {
+                if (approval === false) {
                     return {
                         success: false,
                         message: "user rejected dialogue"
@@ -326,7 +326,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                 }
 
                 // ask user for consent
-                const result = await snap.request({
+                const approval = await snap.request({
                     method: 'snap_dialog',
                     params: {
                     type: 'confirmation',
@@ -340,7 +340,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                     },
                 }); 
                 // return if user rejects prompt
-                if (result === false) {
+                if (approval === false) {
                     return {
                         success: false,
                         message: "user rejected dialogue"
