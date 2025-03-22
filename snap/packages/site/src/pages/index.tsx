@@ -113,11 +113,35 @@ const Index = () => {
   const handleSendHelloClick = async () => {
     await invokeSnap({ method: 'hello' });
   };
+  const handleSendStoreVC = async () => {
+    await invokeSnap({
+      method: 'store-vc',
+      params: { vc: "eyJhbGciOiJFUzI1NkstUiIsInR5cCI6IkpXVCJ9.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImFnZSI6MjV9fSwic3ViamVjdCI6ImRpZDpldGhyOjB4ZmU0NTY4MDM4NzU5YjczOUQ2ZWJFMDVhMDM0NTNiNmM5ODlENzFlMyIsIm5iZiI6MTc0MjQyNDcyMywiaXNzIjoiZGlkOmV0aHI6MHhmZTQ1NjgwMzg3NTliNzM5RDZlYkUwNWEwMzQ1M2I2Yzk4OUQ3MWUzIn0.dko-li1KduwZ2FUPP4wqb3WDCB6nefgKny8WtwXp8rB6sK4xXHd2pGJCjGvrbFT2yaVEMjw-DMrJUf9xW7sFBAA" }
+    });
+  };
+  const handleSendCreateDID = async () => {
+    await invokeSnap({
+      method: 'create-did'
+    });
+  };
+  const handleSendGetDID = async () => {
+    const result = await invokeSnap({
+      method: 'get-did'
+    });
+    console.log(result)
+  };
+  const handleSendGetVP = async () => {
+    const result = await invokeSnap({
+      method: 'get-vp',
+      params: { challange: "12345" }
+  });
+    console.log(result)
+  };
 
   return (
     <Container>
       <Heading>
-        Welcome to <Span>template-snap</Span>
+        Welcome to <Span>kyndryl-snap</Span>
       </Heading>
       <Subtitle>
         Get started by editing <code>src/index.tsx</code>
@@ -179,6 +203,82 @@ const Index = () => {
             button: (
               <SendHelloButton
                 onClick={handleSendHelloClick}
+                disabled={!installedSnap}
+                />
+              ),
+            }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Create Identifier',
+            description:
+              'Create a new did:ethr identifier to be stored in the snap. (overwrites the previous did)',
+            button: (
+              <SendHelloButton
+                onClick={handleSendCreateDID}
+                disabled={!installedSnap}
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Get identifier',
+            description:
+              'Get the did:ethr and print it to console',
+            button: (
+              <SendHelloButton
+                onClick={handleSendGetDID}
+                disabled={!installedSnap}
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Store VC',
+            description:
+              'Store a VC in snap secure storage',
+            button: (
+              <SendHelloButton
+                onClick={handleSendStoreVC}
+                disabled={!installedSnap}
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Get presentation',
+            description:
+              'Get the verifiable credential from the user contained in a verifiable presentation',
+            button: (
+              <SendHelloButton
+                onClick={handleSendGetVP}
                 disabled={!installedSnap}
               />
             ),
