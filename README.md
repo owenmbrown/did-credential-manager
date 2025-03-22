@@ -7,20 +7,22 @@ Creates and signs Verifiable Credentials (VCs). Stores DID documents in MongoDB 
 2. Install packages `npm install`
 3. Run with nodemon `npx nodemon`
 ## Endpoints
- * POST `localhost:5000/issuer/issue-vc`
-     -  Issue a Verifiable Credential (VC)
-     -  Include subject's did and the claim that is being made about them in the request body
-         ```
-         {
-           "subjectDid": "did:ethr:0x5678...",
-           "claim": { "age": 25 }
-         }
-     -  Returns the VC payload in the response body
-         ```
-         {
-           "vc": "eyJhbGciOiJI..."
-         }
-  
+## `POST localhost:5000/issuer/issue-vc`
+Issues a Verifiable Credential (VC) about a subject
+### Usage
+```
+{
+ "subjectDid": "did:ethr:0x5678...",
+ "claim": { "age": 25 }
+}
+```
+### Response
+```
+{
+ "vc": "eyJhbGciOiJI..."
+}
+```
+
 # MetaMask Snap RPC Methods
 This MetaMask Snap provides several RPC methods that interact with a decentralized identity (DID) and verifiable credentials (VC):
 
@@ -91,124 +93,89 @@ Returns the signed JWT representing the Verifiable Presentation. If any issue oc
 Requests the user's VC and verifies it.
 Resolves the user's DID using ethereum did registry.
 ## Backend
- * POST localhost:5001/verifier/verify-vc
-      - Depriciated: use `verifier/verify-vp` instead
-      - Verify a verifiable credential
-      - Include the verifiable credential in the request body
-          ```
-          {
-            "vc": "eyJhbGciOiJI..."
-          } 
-      - Verifies the credendial, and returns the data
-     ```
-     {
-         "verified": true,
-         "payload": {
-             "verified": true,
-             "payload": {
-                 "vc": {
-                     "@context": [
-                         "https://www.w3.org/2018/credentials/v1"
-                     ],
-                     "type": [
-                         "VerifiableCredential"
-                     ],
-                     "credentialSubject": {
-                         "age": 25
-                     }
-                 },
-                 "subject": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3",
-                 "nbf": 1741829021,
-                 "iss": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3"
-             },
-             "didResolutionResult": {
-                 "didDocumentMetadata": {},
-                 "didResolutionMetadata": {
-                     "contentType": "application/did+json"
-                 },
-                 "didDocument": {
-                     "id": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3",
-                     "verificationMethod": [
-                         {
-                             "id": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3#controller",
-                             "type": "EcdsaSecp256k1RecoveryMethod2020",
-                             "controller": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3",
-                             "blockchainAccountId": "eip155:1:0xfe4568038759b739D6ebE05a03453b6c989D71e3"
-                         }
-                     ],
-                     "authentication": [
-                         "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3#controller"
-                     ],
-                     "assertionMethod": [
-                         "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3#controller"
-                     ]
-                 }
-             },
-             "issuer": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3",
-             "signer": {
-                 "id": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3#controller",
-                 "type": "EcdsaSecp256k1RecoveryMethod2020",
-                 "controller": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3",
-                 "blockchainAccountId": "eip155:1:0xfe4568038759b739D6ebE05a03453b6c989D71e3"
-             },
-             "jwt": "eyJhbGciOiJFUzI1NkstUiIsInR5cCI6IkpXVCJ9.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImFnZSI6MjV9fSwic3ViamVjdCI6ImRpZDpldGhyOjB4ZmU0NTY4MDM4NzU5YjczOUQ2ZWJFMDVhMDM0NTNiNmM5ODlENzFlMyIsIm5iZiI6MTc0MTgyOTAyMSwiaXNzIjoiZGlkOmV0aHI6MHhmZTQ1NjgwMzg3NTliNzM5RDZlYkUwNWEwMzQ1M2I2Yzk4OUQ3MWUzIn0.ENIG65J_gAbbWoH7qgqwjT6hs5Fe1teITAmYr1Fs_fc66jQZlQ4a6RyDVX37hFgMEpS5ZV8vzA_e92QwU1H6BQA",
-             "policies": {},
-             "verifiableCredential": {
-                 "subject": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3",
-                 "credentialSubject": {
-                     "age": 25
-                 },
-                 "issuer": {
-                     "id": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3"
-                 },
-                 "type": [
-                     "VerifiableCredential"
-                 ],
-                 "@context": [
-                     "https://www.w3.org/2018/credentials/v1"
-                 ],
-                 "issuanceDate": "2025-03-13T01:23:41.000Z",
-                 "proof": {
-                     "type": "JwtProof2020",
-                     "jwt": "eyJhbGciOiJFUzI1NkstUiIsInR5cCI6IkpXVCJ9.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImFnZSI6MjV9fSwic3ViamVjdCI6ImRpZDpldGhyOjB4ZmU0NTY4MDM4NzU5YjczOUQ2ZWJFMDVhMDM0NTNiNmM5ODlENzFlMyIsIm5iZiI6MTc0MTgyOTAyMSwiaXNzIjoiZGlkOmV0aHI6MHhmZTQ1NjgwMzg3NTliNzM5RDZlYkUwNWEwMzQ1M2I2Yzk4OUQ3MWUzIn0.ENIG65J_gAbbWoH7qgqwjT6hs5Fe1teITAmYr1Fs_fc66jQZlQ4a6RyDVX37hFgMEpS5ZV8vzA_e92QwU1H6BQA"
-                 }
-             }
-         }
-     } 
+## `POST localhost:5001/verifier/verify-vc`
+Depriciated: use `verifier/verify-vp` instead
 
-* GET localhost:5001/verifier/generate-challenge
-     - Generated a challenge string, for the user to include in the verifiable presentation.
-     - Each challenge expires after a minute, and can only be used once, so this prevents replay attacks.
-     - Returns the challenge in the response body
-     ```
-     {
-         "challenge": "PAdd2emrfP9AImxelCtfTJgGVQW6IckF9Wtf7cpo7HI"
+Verifies a verifiable credential
+### Usage
+```
+{
+  "vc": "eyJhbGciOiJI..."
+}
+```
+### Response
+If verification succeeds
+```
+{
+    "verified": true,
+    "payload": {
+        "verified": true,
+        "payload": {
+            "vc": {
+                "@context": [
+                    "https://www.w3.org/2018/credentials/v1"
+                ],
+                "type": [
+                    "VerifiableCredential"
+                ],
+                "credentialSubject": {
+                    "age": 25
+                }
+            },
+            "subject": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3",
+            "nbf": 1741829021,
+            "iss": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3"
+        },
+        .......
      }
+}
+```
+If verification fails
+```
+{
+     "verified": false,
+     "error": "some error
 
-* POST localhost:5001/verifier/verify-vp
-     - Verify a verifiable presentation (VP), and verify the verifiable credential (VC) inside.
-     - Include the verifiable presentation in the request body
-          ```
-          {
-            "vp": "eyJhbGciOiJI..."
-          } 
-     - Will return an error the challange is incorrect or expired
-     - Will return an error if the issuer of the VP and the subject of the VC don't match
-     - Will return an error if either the VP or the VC is invalid
-       ```
-       {
-            "verified": false,
-            "error": "..."
-       }
-               
-     - If successful, will return the VC contained in the VP
-       ```
-       {
-            "verified": true,
-            "payload": {
-                 ...
-            }
-       }
+}
+```
+
+## `GET localhost:5001/verifier/generate-challenge`
+Generated a challenge string, for the user to include in the verifiable presentation.  Each challenge expires after a minute, and can only be used once, so this prevents replay attacks.
+### Usage
+### Response
+```
+{
+    "challenge": "PAdd2emrfP9AImxelCtfTJgGVQW6IckF9Wtf7cpo7HI"
+}
+```
+
+## `POST localhost:5001/verifier/verify-vp`
+Verify a verifiable presentation (VP), and verify the verifiable credential (VC) inside.
+### Usage
+```
+{
+  "vp": "eyJhbGciOiJI..."
+}
+```
+### Response
+Will return an error the challange is incorrect or expired
+Will return an error if the issuer of the VP and the subject of the VC don't match
+Will return an error if either the VP or the VC is invalid
+```
+{
+  "verified": false,
+  "error": "..."
+}
+```
+If successful, will return the VC contained in the VP
+```
+{
+  "verified": true,
+  "payload": {
+       ...
+  }
+}
+```
 
 # Registering a did:ethr
 This is for testing storage on the [ethr-did-registry](github.com/uport-project/ethr-did-registry).  Since all ethereum addresses are already identifiers without needing to register, this isn't nessisary for using the other endpoints.
