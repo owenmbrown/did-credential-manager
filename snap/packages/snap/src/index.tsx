@@ -1,5 +1,5 @@
 import type { OnRpcRequestHandler } from '@metamask/snaps-sdk';
-import { Box, Text, Bold } from '@metamask/snaps-sdk/jsx';
+import { Box, Text, Bold, Heading } from '@metamask/snaps-sdk/jsx';
 
 import { createVerifiablePresentationJwt, JwtPresentationPayload, Issuer } from 'did-jwt-vc';
 import { EthrDID } from 'ethr-did';
@@ -90,6 +90,28 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                 },
             });
         case 'create-did': // creates a new did:ethr and stores it in snap storage
+            // ask user for consent
+            const result = await snap.request({
+                method: 'snap_dialog',
+                params: {
+                type: 'confirmation',
+                content: (
+                    <Box>
+                        <Heading>Would you like to create a new did:ethr?</Heading>
+                        <Text>This identity can be used to create and store verifiable credentials.</Text>
+                        <Text>Warning: This will overwrite any previous dids that have been stored</Text>
+                    </Box>
+                ),
+                },
+            }); 
+            // return if user rejects prompt
+            if (result === false) {
+                return {
+                    success: false,
+                    did: ""
+                }
+            }
+
             // create a new did:ethr
             const wallet = ethers.Wallet.createRandom();
     
@@ -119,8 +141,9 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                 type: 'alert',
                 content: (
                     <Box>
+                        <Heading>Created a new identifier</Heading>
                         <Text>
-                            <Bold>Created a new identifier did:ethr:{address}</Bold>
+                            <Bold>did:ethr:{address}</Bold>
                         </Text>
                     </Box>
                 ),
@@ -128,6 +151,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
             }); 
 
             return {
+                success: true,
                 did: address
             }
         case 'get-did': {
@@ -277,68 +301,6 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
             );
 
             return signedPresentationJwt;
-        }
-        case 'test_store': {
-            // const newState = request.params?.newState || {};
-            // return snap.request({
-            //   method: 'snap_manageState',
-            //   params: { 
-            //     operation: 'update',
-            //     newState: { hello: "world" }
-            //   },
-            // });
-            console.log("test_store 1")
-
-            // Persist some data.
-            await snap.request({
-                method: "snap_manageState",
-                params: {
-                operation: "update",
-                newState: { hello: "world" },
-                },
-            })
-            
-            console.log("test_store 2")
-
-            // // At a later time, get the stored data.
-            const persistedData = await snap.request({
-                method: "snap_manageState",
-                params: { operation: "get" },
-            })
-
-            console.log("persistedData:")
-            console.log(persistedData)
-            // { hello: "world" }
-
-            // If data storage is no longer necessary, clear it.
-            return snap.request({
-                method: "snap_manageState",
-                params: {
-                operation: "clear",
-                },
-            })
-        }
-        case 'pass_message': {
-            const params = request.params as PassMessageParams; 
-            console.log(params.message)
-            return snap.request({
-                method: 'snap_dialog',
-                params: {
-                type: 'confirmation',
-                content: (
-                    <Box>
-                    <Text>
-                        {params.message}
-                    </Text>
-                    </Box>
-                ),
-                },
-            });
-        }
-        case 'return_test': {
-            return {
-                message: "hello bro"
-            }
         }
         default:
             throw new Error('Method not found.');
