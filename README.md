@@ -77,7 +77,7 @@ Returns the DID address
   "did": "0x1234567890abcdef1234567890abcdef12345678"
 }
 ```
-Can fail if the user rejects the dialogue, or if the did isn't stored
+Can fail if the did isn't stored
 ```
 {
   "success": false,
