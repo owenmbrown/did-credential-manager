@@ -135,6 +135,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                 },
             });
 
+            // show a success dialogue
             await snap.request({
                 method: 'snap_dialog',
                 params: {
@@ -157,18 +158,23 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
         case 'get-did': {
             // returns the stored did:ethr if it exists
 
+            // get current state of snap secure storage
             const persistedData = await snap.request({
                 method: "snap_manageState",
                 params: { operation: "get" },
             })
 
             if (persistedData == null || persistedData == undefined) {
+                // if there is no data in storage, return failure
                 return {
+                    success: false,
                     did:""
                 }
             }
             else {
+                // return the did:ethr address
                 return {
+                    success: true,
                     did: (persistedData as StorageContents).did.address
                 }
             }
