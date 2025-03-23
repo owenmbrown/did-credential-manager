@@ -28,6 +28,7 @@
     "@veramo/did-resolver": "^6.0.0",
     "@veramo/key-manager": "^6.0.0",
     "@veramo/kms-local": "^6.0.0",
+    "backend": "file:",
     "did-jwt": "^8.0.8",
     "did-jwt-vc": "^4.0.6",
     "dotenv": "^16.4.7",
