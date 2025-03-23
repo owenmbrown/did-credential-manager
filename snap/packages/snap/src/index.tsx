@@ -3,7 +3,7 @@ import { Box, Text, Bold, Heading } from '@metamask/snaps-sdk/jsx';
 
 import { createVerifiablePresentationJwt, JwtPresentationPayload, Issuer, verifyCredential } from 'did-jwt-vc';
 import { EthrDID } from 'ethr-did';
-import { ethers, hexlify, toUtf8Bytes, toUtf8String, verifyMessage } from 'ethers';
+import { ethers } from 'ethers';
 import { Resolver } from 'did-resolver';
 import { getResolver as getEthrResolver } from 'ethr-did-resolver';
 
@@ -101,7 +101,6 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
         
                 // Extract keys and address
                 const privateKey = wallet.privateKey;
-                // const publicKey = wallet.publicKey;
                 const address = wallet.address;
 
                 // Update the state storage to include
