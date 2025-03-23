@@ -1,14 +1,14 @@
 # Capstone-Kyndryl-project
 
 # Issuer
-Creates and signs Verifiable Credentials (VCs). Stores DID documents in MongoDB (for now). Provides VCs to users.
+Creates and signs Verifiable Credentials (VCs).
 ## Running
 1. Go to the isssuer/backend directory
 2. Install packages `npm install`
 3. Run with nodemon `npx nodemon`
 ## Endpoints
 ## `POST localhost:5000/issuer/issue-vc`
-Issues a Verifiable Credential (VC) about a subject
+Issues a Verifiable Credential (VC) with a claim about a subject
 ### Usage
 ```
 {
@@ -212,7 +212,7 @@ If successful, will return the VC contained in the VP
 ```
 
 # Registering a did:ethr
-This is for testing storage on the [ethr-did-registry](github.com/uport-project/ethr-did-registry).  Since all ethereum addresses are already identifiers without needing to register, this isn't nessisary for using the other endpoints.
+This is for testing interacting with the [ethr-did-registry](github.com/uport-project/ethr-did-registry).  Since all ethereum addresses are already identifiers without needing to register, this isn't nessisary for using the other endpoints.
 ## Using
 1. Create an ethereum wallet in metamask, or use an existing wallet.
 2. Add at least 0.001 eth (1-3 usd) to that wallet (mininum needed to use faucet)
@@ -226,6 +226,5 @@ This is for testing storage on the [ethr-did-registry](github.com/uport-project/
           INFURA_PROJECT_ID="your_infura_project_id"
    3. Get your wallet key from metamask (or other provider like coinbase)
    4. Get your infura project id from the infura provider link `https://sepolia.infura.io/v3/your_infura_project_id`
-   5. Warning: It's important to never commit these keys github
 6. Register your did:ethr `npm start -- -r` (you need funds on the testnet for this)
 7. Verify that your did is registered correctly `npm start -- -v`
