@@ -7,9 +7,6 @@ import { ethers, hexlify, toUtf8Bytes, toUtf8String, verifyMessage } from 'ether
 import { Resolver } from 'did-resolver';
 import { getResolver as getEthrResolver } from 'ethr-did-resolver';
 
-type PassMessageParams = {
-    message: string; // Message parameter
-}
 
 type StoreVCParams = {
     vc: string
@@ -29,31 +26,15 @@ type StorageContents = {
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
-// async function signMessage(message : string) {
-//     try {
-//         // Convert message to hex if needed
-//         const messageHex = hexlify(toUtf8Bytes(message));
-        
-//         // Request accounts first to get the user's address
-//         // const accounts = await ethereum.request({
-//         //     method: 'eth_requestAccounts',
-//         // }) as string[];
-//         // const address = accounts[0];
-//         const address = "0xfe4568038759b739D6ebE05a03453b6c989D71e3";
-        
-//         // Sign the message
-//         const signature = await ethereum.request({
-//             method: 'personal_sign',
-//             params: [messageHex, address],
-//         });
-        
-//         return { signature, address };
-//     } catch (error) {
-//         console.error('Error signing message:', error);
-//         throw error;
-//     }
-// }
-  
+// get current state of snap secure storage
+async function getSnapStorage() : Promise<StorageContents | null> {
+    const storedData = await snap.request({
+        method: "snap_manageState",
+        params: { operation: "get" },
+    });
+
+    return storedData as StorageContents | null;
+}
 
 /**
  * Handle incoming JSON-RPC requests, sent through `wallet_invokeSnap`.
@@ -145,7 +126,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                     type: 'alert',
                     content: (
                         <Box>
-                            <Heading>Created a new identifier</Heading>
+                            <Heading>Identifier Created</Heading>
                             <Text>
                                 <Bold>did:ethr:{address}</Bold>
                             </Text>
@@ -170,24 +151,21 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
             // returns the stored did:ethr if it exists
 
             // get current state of snap secure storage
-            const persistedData = await snap.request({
-                method: "snap_manageState",
-                params: { operation: "get" },
-            })
+            const storageContents = await getSnapStorage();
 
-            if (persistedData == null || persistedData == undefined) {
+            if (!storageContents) {
                 // if there is no data in storage, return failure
                 return {
                     success: false,
                     message: "no did is stored"
-                }
+                };
             }
             else {
                 // return the did:ethr address
                 return {
                     success: true,
-                    did: (persistedData as StorageContents).did.address
-                }
+                    did: storageContents.did.address
+                };
             }
         }
         case 'store-vc': {
@@ -197,12 +175,9 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                 const vc = params.vc;
 
                 // get current state of snap secure storage
-                const persistedData = await snap.request({
-                    method: "snap_manageState",
-                    params: { operation: "get" },
-                })
+                const storageContents = await getSnapStorage();
 
-                if (persistedData == null || persistedData == undefined) {
+                if (!storageContents) {
                     // if the data doesn't exist, display a dialogue and return failure
                     await snap.request({
                         method: 'snap_dialog',
@@ -224,9 +199,6 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                     }
                 }
 
-                // cast the stored data into our object to manipulate
-                const updatedStorage = persistedData as StorageContents;
-
                 // // initialize did:ethr resolver
                 // const resolver = new Resolver({
                 //     ...getEthrResolver({ infuraProjectId: INFURA_PROJECT_ID }),
@@ -245,7 +217,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                     content: (
                         <Box>
                             <Heading>Would you like to store this verifiable credential?</Heading>
-                            <Text>Using the identity did:ethr:{updatedStorage.did.address} </Text>
+                            <Text>Using the identity did:ethr:{storageContents.did.address} </Text>
                             <Text>placeholder</Text>
                         </Box>
                     ),
@@ -260,14 +232,14 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                 }
 
                 // update the VC in the object
-                updatedStorage.did.vc = vc
+                storageContents.did.vc = vc
                 
                 // store the VC in secure storage
                 await snap.request({
                     method: "snap_manageState",
                     params: {
                     operation: "update",
-                    newState: updatedStorage,
+                    newState: storageContents,
                     },
                 })
 
@@ -304,7 +276,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                 const params = request.params as GetVPParams;
                 const challenge = params.challenge;
                 // check if the challenge was actually set
-                if (challenge == null || challenge == undefined) {
+                if (!challenge) {
                     return {
                         success: false,
                         message: "missing challenge"
@@ -312,16 +284,13 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                 }
                 
                 // get current state of snap secure storage
-                const persistedData = await snap.request({
-                    method: "snap_manageState",
-                    params: { operation: "get" },
-                })
+                const storageContents = await getSnapStorage();
                 
                 // verify data is formatted correctly
-                if (persistedData == null || persistedData == undefined || (persistedData as StorageContents).did.vc == "") {
+                if (!storageContents || storageContents.did.vc == "") {
                     return {
                         success: false,
-                        message: "no vc found in data"
+                        message: "no vc is stored"
                     }
                 }
 
@@ -348,9 +317,8 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                 }
 
                 // read values from the storage object we received
-                const storedData = persistedData as StorageContents;
-                const wallerPrivateKey = storedData.did.privateKey;
-                const vc = storedData.did.vc;
+                const wallerPrivateKey = storageContents.did.privateKey;
+                const vc = storageContents.did.vc;
 
                 // initialized rpc provider
                 const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`);
