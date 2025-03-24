@@ -159,8 +159,8 @@ const CredentialPage = () => {
           
           {did && (
             <div className="mb-4">
-              <p className="font-semibold">Your DID:</p>
-              <p className="break-all bg-gray-100 p-2 rounded">{`did:ethr:${did}`}</p>
+              <p className="font-semibold text-black">Your DID:</p>
+              <p className="break-all bg-gray-100 p-2 rounded text-black">{`did:ethr:${did}`}</p>
             </div>
           )}
         </div>
@@ -174,17 +174,6 @@ const CredentialPage = () => {
             >
               {isProcessing ? 'Installing...' : 'Install DMV Snap'}
             </button>
-          ) : credentialIssued ? (
-            <div>
-              <p className="text-green-600 font-medium mb-2">✅ Credential issued successfully!</p>
-              <p>You can now use this credential to log in to the Texas A&M Bank app.</p>
-              <a 
-                href="/bank-app" 
-                className="block w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 text-center mt-4"
-              >
-                Go to Bank App
-              </a>
-            </div>
           ) : (
             <button
               onClick={requestCredential}
