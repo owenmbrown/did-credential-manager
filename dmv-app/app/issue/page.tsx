@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import Sidebar from '@/components/sidebar';
+import Head from "@/components/header";
 
 const LandingPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center text-white p-8 bg-opacity-60 backdrop-blur-lg rounded-lg w-full max-w-4xl">
+      <Head />
+      <div className="text-center text-white p-8 bg-[var(--maroon)] rounded-lg w-full max-w-4xl">
         <h1 className="text-5xl font-bold mb-4">
           Welcome to the Texas A&M DMV Service
         </h1>
