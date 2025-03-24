@@ -2,12 +2,15 @@ import { Box, Text, Bold, Heading } from '@metamask/snaps-sdk/jsx';
 import { ethers } from 'ethers';
 
 import { StoreVCParams, GetVPParams, StorageContents } from './types'
-import { getSnapStorage } from './snap-helpers';
+import { getSnapStorage, setSnapStorage } from './snap-helpers';
 import { JsonRpcParams, JsonRpcRequest } from '@metamask/snaps-sdk';
 import { createVerifiablePresentationJwt, Issuer, JwtPresentationPayload } from 'did-jwt-vc';
 import { EthrDID } from 'ethr-did';
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
+
+// initialized rpc provider
+const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`);
 
 export async function snapCreateDID() {
     try {
@@ -41,18 +44,12 @@ export async function snapCreateDID() {
         const address = wallet.address;
 
         // Update the state storage to include
-        await snap.request({
-            method: "snap_manageState",
-            params: {
-            operation: "update",
-            newState: { 
-                did: {
-                    privateKey,
-                    address,
-                    vc: ""
-                }
-            },
-            },
+        setSnapStorage({ 
+            did: {
+                privateKey,
+                address,
+                vc: ""
+            }
         });
 
         // show a success dialogue
@@ -172,13 +169,7 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
         storageContents.did.vc = vc
         
         // store the VC in secure storage
-        await snap.request({
-            method: "snap_manageState",
-            params: {
-            operation: "update",
-            newState: storageContents,
-            },
-        })
+        setSnapStorage(storageContents);
 
         // display a confirmation alert
         await snap.request({
@@ -257,9 +248,6 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
         // read values from the storage object we received
         const wallerPrivateKey = storageContents.did.privateKey;
         const vc = storageContents.did.vc;
-
-        // initialized rpc provider
-        const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`);
 
         // Create an EthrDID object for the issuer
         const wallet = new ethers.Wallet(wallerPrivateKey, provider);
