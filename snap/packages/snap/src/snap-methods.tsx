@@ -1,11 +1,11 @@
 import { Box, Text, Bold, Heading } from '@metamask/snaps-sdk/jsx';
-import { ethers } from 'ethers';
-
-import { StoreVCParams, GetVPParams, StorageContents } from './types'
-import { getSnapStorage, setSnapStorage } from './snap-helpers';
 import { JsonRpcParams, JsonRpcRequest } from '@metamask/snaps-sdk';
+import { ethers } from 'ethers';
 import { createVerifiablePresentationJwt, Issuer, JwtPresentationPayload } from 'did-jwt-vc';
 import { EthrDID } from 'ethr-did';
+
+import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt } from './snap-helpers';
+import { StoreVCParams, GetVPParams, StorageContents } from './types'
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
@@ -15,19 +15,14 @@ const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${INFU
 export async function snapCreateDID() {
     try {
         // ask user for consent
-        const approval = await snap.request({
-            method: 'snap_dialog',
-            params: {
-            type: 'confirmation',
-            content: (
-                <Box>
-                    <Heading>Would you like to create a new did:ethr?</Heading>
-                    <Text>This identity can be used to create and store verifiable credentials.</Text>
-                    <Text>Warning: This will overwrite any previous dids that have been stored</Text>
-                </Box>
-            ),
-            },
-        }); 
+        const approval = await displayConfirmation(
+            <Box>
+                <Heading>Would you like to create a new did:ethr?</Heading>
+                <Text>This identity can be used to create and store verifiable credentials.</Text>
+                <Text>Warning: This will overwrite any previous dids that have been stored</Text>
+            </Box>
+        ); 
+
         // return if user rejects prompt
         if (approval === false) {
             return {
@@ -53,20 +48,14 @@ export async function snapCreateDID() {
         });
 
         // show a success dialogue
-        await snap.request({
-            method: 'snap_dialog',
-            params: {
-            type: 'alert',
-            content: (
-                <Box>
-                    <Heading>Identifier Created</Heading>
-                    <Text>
-                        <Bold>did:ethr:{address}</Bold>
-                    </Text>
-                </Box>
-            ),
-            },
-        }); 
+        await displayAlert(
+            <Box>
+                <Heading>Identifier Created</Heading>
+                <Text>
+                    <Bold>did:ethr:{address}</Bold>
+                </Text>
+            </Box>
+        );
 
         return {
             success: true,
@@ -113,19 +102,13 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
 
         if (!storageContents) {
             // if the data doesn't exist, display a dialogue and return failure
-            await snap.request({
-                method: 'snap_dialog',
-                params: {
-                type: 'alert',
-                content: (
-                    <Box>
-                        <Text>
-                            <Bold>Credential store failed.  No did:ethr found</Bold>
-                        </Text>
-                    </Box>
-                ),
-                },
-            }); 
+            await displayAlert(
+                <Box>
+                    <Text>
+                        <Bold>Credential store failed.  No did:ethr found</Bold>
+                    </Text>
+                </Box>
+            );
             
             return {
                 success: false,
@@ -144,19 +127,13 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
         // console.log(verificationResult);
 
         // ask user for consent
-        const approval = await snap.request({
-            method: 'snap_dialog',
-            params: {
-            type: 'confirmation',
-            content: (
-                <Box>
-                    <Heading>Would you like to store this verifiable credential?</Heading>
-                    <Text>Using the identity did:ethr:{storageContents.did.address} </Text>
-                    <Text>placeholder</Text>
-                </Box>
-            ),
-            },
-        }); 
+        const approval = await displayConfirmation(
+            <Box>
+                <Heading>Would you like to store this verifiable credential?</Heading>
+                <Text>Using the identity did:ethr:{storageContents.did.address} </Text>
+                <Text>placeholder</Text>
+            </Box>
+        );
         // return if user rejects prompt
         if (approval === false) {
             return {
@@ -172,19 +149,13 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
         setSnapStorage(storageContents);
 
         // display a confirmation alert
-        await snap.request({
-            method: 'snap_dialog',
-            params: {
-            type: 'alert',
-            content: (
-                <Box>
-                    <Text>
-                        <Bold>Credential stored successfully</Bold>
-                    </Text>
-                </Box>
-            ),
-            },
-        }); 
+        await displayAlert(
+            <Box>
+                <Text>
+                    <Bold>Credential stored successfully</Bold>
+                </Text>
+            </Box>
+        );
 
         return {
             success: true
@@ -224,19 +195,13 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
         }
 
         // ask user for consent
-        const approval = await snap.request({
-            method: 'snap_dialog',
-            params: {
-            type: 'confirmation',
-            content: (
-                <Box>
-                    <Heading>Would you like to present this app with a verifiable presentation?</Heading>
-                    <Text>The app can use this to verify a claim about you.</Text>
-                    <Text>This presentation will expire in 1 minute.</Text>
-                </Box>
-            ),
-            },
-        }); 
+        const approval = await displayConfirmation(
+            <Box>
+                <Heading>Would you like to present this app with a verifiable presentation?</Heading>
+                <Text>The app can use this to verify a claim about you.</Text>
+                <Text>This presentation will expire in 1 minute.</Text>
+            </Box>
+        );
         // return if user rejects prompt
         if (approval === false) {
             return {
