@@ -7,6 +7,11 @@ import Sidebar from '@/components/sidebar';
 
 const SNAP_ID = 'local:http://localhost:8080';
 
+type VPResponse = {
+  success: boolean,
+  vp: string
+}
+
 const LoginPage = () => {
   const { login } = useSession();
   const router = useRouter();
@@ -85,7 +90,7 @@ const LoginPage = () => {
         throw new Error('Failed to get challenge from verifier');
       }
       try {
-        const vp = await window.ethereum.request({
+        const vp_response = await window.ethereum.request({
           method: 'wallet_invokeSnap',
           params: {
             snapId: SNAP_ID,
@@ -96,12 +101,12 @@ const LoginPage = () => {
               },
             },
           },
-        });
-        if (!vp) {
+        }) as VPResponse;
+        if (!(vp_response.success)) {
           throw new Error('Failed to get verifiable presentation. You may need to get a Digital ID first.');
         }
         setStatusMessage('Credential found. Verifying with bank services...');
-        console.log(vp);
+        const vp = vp_response.vp
         try {
           const verifyResponse = await fetch('http://localhost:5001/verifier/verify-vp', {
             method: 'POST',
