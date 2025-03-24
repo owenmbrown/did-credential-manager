@@ -206,6 +206,7 @@ const Index = () => {
               <SendHelloButton
                 onClick={handleSendHelloClick}
                 disabled={!installedSnap}
+                ButtonText="Send Message"
                 />
               ),
             }}
@@ -225,6 +226,7 @@ const Index = () => {
               <SendHelloButton
                 onClick={handleSendCreateDID}
                 disabled={!installedSnap}
+                ButtonText="Create ID"
               />
             ),
           }}
@@ -244,6 +246,7 @@ const Index = () => {
               <SendHelloButton
                 onClick={handleSendGetDID}
                 disabled={!installedSnap}
+                ButtonText="Get ID"
               />
             ),
           }}
@@ -263,6 +266,7 @@ const Index = () => {
               <SendHelloButton
                 onClick={handleSendStoreVC}
                 disabled={!installedSnap}
+                ButtonText="Store VC"
               />
             ),
           }}
@@ -282,6 +286,7 @@ const Index = () => {
               <SendHelloButton
                 onClick={handleSendGetVP}
                 disabled={!installedSnap}
+                ButtonText="Get VP"
               />
             ),
           }}
