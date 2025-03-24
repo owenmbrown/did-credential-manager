@@ -1,5 +1,5 @@
 "use client"
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from '../context/sessionContext';
 import { useRouter } from 'next/navigation';
 
@@ -11,68 +11,78 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false); 
   const [errorMessage, setErrorMessage] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  const connectToSnap = async () => {
+    try {
+      setIsConnecting(true);
+      setStatusMessage('Connecting to Digital ID service...');
+      await window.ethereum.request({
+        method: 'wallet_requestSnaps',
+        params: {
+          [SNAP_ID]: {}
+        }
+      });
+      setStatusMessage('Connected to Digital ID service');
+      return true;
+    } catch (error) {
+      setErrorMessage(`Failed to connect to Digital ID service: ${error.message}`);
+      return false;
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (window.ethereum) {
+      connectToSnap();
+    }
+  }, []);
 
   const handleDidLogin = async () => {
-    let challenge; // Declare challenge variable outside try/catch blocks
-    
+    let challenge;
     try {
       setIsLoading(true);
       setErrorMessage('');
       setStatusMessage('Verifying your Digital ID...');
-
-      // Check if MetaMask is installed
       if (!window.ethereum) {
         setErrorMessage('MetaMask is not installed. Please install MetaMask to continue.');
         return;
       }
-
+      const connected = await connectToSnap();
+      if (!connected) {
+        return;
+      }
       try {
-        // Check if our snap is installed
         const snaps = await window.ethereum.request({
           method: 'wallet_getSnaps',
         });
-
-        console.log('Available snaps:', snaps); // Debugging log to inspect the snaps object
-
         const snapInstalled = Object.values(snaps).some((snap: any) => {
-          console.log('Checking snap:', snap); // Debugging log for each snap
           return snap.id === SNAP_ID;
         });
-
         if (!snapInstalled) {
           setErrorMessage('DMV Snap not found. Please get your Digital ID from the DMV first.');
           return;
         }
       } catch (snapError) {
-        console.error('Error checking snaps:', snapError);
         throw new Error('Failed to check installed snaps.');
       }
-
       try {
-        // Step 1: Request a challenge from the verifier service
         const challengeResponse = await fetch('http://localhost:5001/verifier/generate-challenge');
-        
         if (!challengeResponse.ok) {
-          const errorText = await challengeResponse.text(); // Log the response body for debugging
-          console.error('Challenge request failed:', challengeResponse.status, errorText);
+          const errorText = await challengeResponse.text();
           throw new Error('Failed to generate verification challenge');
         }
-
         const challengeData = await challengeResponse.json();
-        challenge = challengeData.challenge; // Assign to the variable declared outside
+        challenge = challengeData.challenge;
         setStatusMessage('Challenge received. Preparing credential presentation...');
       } catch (challengeError) {
-        console.error('Error generating challenge:', challengeError);
         throw new Error('Failed to generate verification challenge.');
       }
-
-      // Make sure challenge is defined before proceeding
       if (!challenge) {
         throw new Error('Failed to get challenge from verifier');
       }
-
       try {
-        // Step 2: Get a verifiable presentation from the snap
         const vp = await window.ethereum.request({
           method: 'wallet_invokeSnap',
           params: {
@@ -85,15 +95,12 @@ const LoginPage = () => {
             },
           },
         });
-
         if (!vp) {
           throw new Error('Failed to get verifiable presentation. You may need to get a Digital ID first.');
         }
-
         setStatusMessage('Credential found. Verifying with bank services...');
-        
+        console.log(vp);
         try {
-          // Step 3: Verify the presentation with the verifier service
           const verifyResponse = await fetch('http://localhost:5001/verifier/verify-vp', {
             method: 'POST',
             headers: {
@@ -101,40 +108,32 @@ const LoginPage = () => {
             },
             body: JSON.stringify({ vp }),
           });
-
-          const verifyResult = await verifyResponse.json();
-
+          const responseText = await verifyResponse.text();
+          let verifyResult;
+          try {
+            verifyResult = JSON.parse(responseText);
+          } catch (e) {
+            throw new Error(`Invalid verification response: ${responseText}`);
+          }
           if (!verifyResponse.ok || !verifyResult.verified) {
-            console.error('Verification failed:', verifyResult);
             throw new Error(verifyResult.error || 'Credential verification failed');
           }
-
-          // Step 4: Extract user information from the verified credential
           const credentialSubject = verifyResult.payload?.credentialSubject;
-
-          // Check if this credential has banking permissions
           if (!credentialSubject.permissions || !credentialSubject.permissions.includes('banking')) {
             throw new Error('Your Digital ID does not have banking permissions');
           }
-
-          // Step 5: Log the user in with the extracted information
           login({
             name: credentialSubject.name || 'Bank Customer',
             licenseNumber: credentialSubject.licenseNumber || '',
           });
-
-          // Step 6: Redirect to account page
           router.push('/bank-app/account');
         } catch (verifyError) {
-          console.error('Error verifying presentation:', verifyError);
           throw new Error('Failed to verify credential presentation.');
         }
       } catch (vpError) {
-        console.error('Error getting verifiable presentation:', vpError);
         throw new Error('Failed to get verifiable presentation.');
       }
     } catch (error) {
-      console.error('Login error:', error);
       setErrorMessage(error.message || 'Authentication failed. Please try again.');
     } finally {
       setIsLoading(false);
@@ -146,23 +145,26 @@ const LoginPage = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <h1 className="text-3xl font-bold mb-4 text-center text-black">Login to Texas A&M Bank</h1>
-        
         <p className="mb-6 text-center text-black">
           Sign in securely using your Digital ID issued by the Texas A&M DMV.
         </p>
-        
         {errorMessage && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
             {errorMessage}
           </div>
         )}
-        
         {statusMessage && (
           <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
             {statusMessage}
           </div>
         )}
-        
+        <button
+          onClick={connectToSnap}
+          disabled={isConnecting}
+          className="bg-gray-200 text-gray-800 py-2 px-4 rounded-lg mb-4 w-full hover:bg-gray-300 disabled:bg-gray-100"
+        >
+          {isConnecting ? 'Connecting...' : 'Connect to Digital ID Service'}
+        </button>
         <button
           onClick={handleDidLogin}
           disabled={isLoading}
@@ -170,9 +172,7 @@ const LoginPage = () => {
         >
           {isLoading ? 'Authenticating...' : 'Login with Digital ID'}
         </button>
-        
-        <div className="text-center mt-4">
-        </div>
+        <div className="text-center mt-4"></div>
       </div>
     </div>
   );

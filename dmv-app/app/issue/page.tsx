@@ -11,17 +11,14 @@ const CredentialPage = () => {
   const [statusMessage, setStatusMessage] = useState('');
   const [credentialIssued, setCredentialIssued] = useState(false);
 
-  // Check if MetaMask and our snap are available
   useEffect(() => {
     const checkSnapInstallation = async () => {
       try {
-        // Check if MetaMask is installed
         if (!window.ethereum) {
           setStatusMessage('MetaMask is not installed. Please install MetaMask to use this feature.');
           return;
         }
         
-        // Check if our snap is installed
         const result = await window.ethereum.request({
           method: 'wallet_getSnaps',
         });
@@ -31,7 +28,6 @@ const CredentialPage = () => {
           setStatusMessage('DMV Snap is not installed. Please click "Install Snap" to continue.');
         }
         
-        // Get DID if snap is installed
         if (result[SNAP_ID]) {
           const didResult = await window.ethereum.request({
             method: 'wallet_invokeSnap',
@@ -56,7 +52,6 @@ const CredentialPage = () => {
     checkSnapInstallation();
   }, []);
 
-  // Function to install the snap
   const installSnap = async () => {
     try {
       setIsProcessing(true);
@@ -69,7 +64,6 @@ const CredentialPage = () => {
         },
       });
       
-      // Create a new DID
       const result = await window.ethereum.request({
         method: 'wallet_invokeSnap',
         params: {
@@ -93,13 +87,11 @@ const CredentialPage = () => {
     }
   };
 
-  // Function to request ID credential
   const requestCredential = async () => {
     try {
       setIsProcessing(true);
       setStatusMessage('Requesting your Digital ID credential...');
       
-      // Step 1: Call your issuer service to issue a credential for this DID
       const issuerResponse = await fetch('http://localhost:5000/issuer/issue-vc', {
         method: 'POST',
         headers: {
@@ -114,7 +106,7 @@ const CredentialPage = () => {
             licenseNumber: "DL" + Math.floor(Math.random() * 1000000).toString(),
             name: "John Doe",
             dateOfBirth: "1990-01-01",
-            expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
+            expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
             permissions: ["banking", "voting", "dmv"],
             address: "123 Aggie Lane, College Station, TX"
           }
@@ -127,7 +119,6 @@ const CredentialPage = () => {
       
       const { vc } = await issuerResponse.json();
       
-      // Step 2: Store the credential in the snap's secure storage
       await window.ethereum.request({
         method: 'wallet_invokeSnap',
         params: {
@@ -167,8 +158,8 @@ const CredentialPage = () => {
           
           {did && (
             <div className="mb-4">
-              <p className="font-semibold text-black">Your DID:</p>
-              <p className="break-all bg-gray-100 p-2 rounded text-black">{`did:ethr:${did}`}</p>
+              <p className="font-semibold">Your DID:</p>
+              <p className="break-all bg-gray-100 p-2 rounded">{`did:ethr:${did}`}</p>
             </div>
           )}
         </div>
