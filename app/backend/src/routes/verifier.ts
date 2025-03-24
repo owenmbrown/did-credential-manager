@@ -93,7 +93,7 @@ router.post('/verify-vp', async (req : Request, res: Response) => {
         // makes sure the holder controls the DID that the credential is about
         const vcSubjectDID = vcPayload.payload.subject;
         if (vcSubjectDID != vpIssuerDID) {
-            res.status(400).json({ verified: false, error: "did:ethr of credential subject and presentation issuer don't match" });
+            res.status(400).json({ verified: false, error: `did:ethr of credential subject and presentation issuer don't match. vc subject:${vcSubjectDID} != vp issuer ${vpIssuerDID}` });
             return
         }
         
