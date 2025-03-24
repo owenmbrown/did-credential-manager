@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import Sidebar from '@/components/sidebar';
+import Sidebar from '@/components/sidebar-new';
 import Head from '@/components/header';
 
 const About = () => {
