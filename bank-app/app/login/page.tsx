@@ -118,7 +118,8 @@ const LoginPage = () => {
           if (!verifyResponse.ok || !verifyResult.verified) {
             throw new Error(verifyResult.error || 'Credential verification failed');
           }
-          const credentialSubject = verifyResult.payload?.credentialSubject;
+          const credentialSubject = verifyResult.payload?.vc.credentialSubject;
+          console.log(credentialSubject)
           if (!credentialSubject.permissions || !credentialSubject.permissions.includes('banking')) {
             throw new Error('Your Digital ID does not have banking permissions');
           }
@@ -126,7 +127,7 @@ const LoginPage = () => {
             name: credentialSubject.name || 'Bank Customer',
             licenseNumber: credentialSubject.licenseNumber || '',
           });
-          router.push('/bank-app/account');
+          router.push('/account');
         } catch (verifyError) {
           throw new Error('Failed to verify credential presentation.');
         }
