@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useSession } from '../context/sessionContext';
 import { useRouter } from 'next/navigation';
+import Head from '@/components/header';
+import Sidebar from '@/components/sidebar';
 
 const SNAP_ID = 'local:http://localhost:8080';
 
@@ -175,6 +177,7 @@ const LoginPage = () => {
         </button>
         <div className="text-center mt-4"></div>
       </div>
+      <Sidebar />
     </div>
   );
 };

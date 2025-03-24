@@ -1,10 +1,12 @@
 import React from 'react';
 import Link from 'next/link';
 import Sidebar from '@/components/sidebar';
+import Head from '@/components/header';
 
 const About = () => {
   return (
     <div className="min-h-screen flex items-center justify-center">
+      <Head />
       <div className="bg-[var(--maroon)] p-8 rounded-lg shadow-lg w-full max-w-4xl">
         <h1 className="text-3xl text-white-700 font-bold text-center mb-4">About the Texas A&M DMV Service</h1>
         <p className="text-lg text-white-700 mb-4">

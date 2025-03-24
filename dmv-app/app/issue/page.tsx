@@ -1,6 +1,7 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/sidebar';
+import Head from "@/components/header";
 
 const SNAP_ID = 'local:http://localhost:8080';
 
