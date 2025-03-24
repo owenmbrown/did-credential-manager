@@ -53,12 +53,12 @@ router.get("/generate-challenge", async (req: Request, res: Response) => {
 router.post('/verify-vp', async (req : Request, res: Response) => { 
     try {
         const { vp } = req.body;
-
         // verify if the verifiable presentation is valid
         const vpPayload = await verifyPresentation(vp, resolver);
 
         // return error if the verification failed
         if (!vpPayload.verified) {
+            console.log("HERE");
             res.status(400).json({ verified: false, error: "VP verification failed" });
             return
         }
