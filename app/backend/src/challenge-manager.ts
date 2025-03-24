@@ -39,15 +39,15 @@ export class ChallengeManager {
     }
 
     verifyChallenge(challenge: string) : boolean {
-        // const storedChallenge = this.challenges.get(challenge);
+        const storedChallenge = this.challenges.get(challenge);
 
-        // if (!storedChallenge) return false;
+        if (!storedChallenge) return false;
 
-        // const currentTimestamp = Date.now(); 
+        const currentTimestamp = Date.now(); 
 
-        // if (currentTimestamp > storedChallenge.expiresAt || storedChallenge.used) return false;
+        if (currentTimestamp > storedChallenge.expiresAt || storedChallenge.used) return false;
 
-        // storedChallenge.used = true;
+        storedChallenge.used = true;
 
         return true;
     }
