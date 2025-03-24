@@ -58,7 +58,6 @@ router.post('/verify-vp', async (req : Request, res: Response) => {
 
         // return error if the verification failed
         if (!vpPayload.verified) {
-            console.log("HERE");
             res.status(400).json({ verified: false, error: "VP verification failed" });
             return
         }
@@ -103,6 +102,7 @@ router.post('/verify-vp', async (req : Request, res: Response) => {
         res.json(vcPayload)
     } catch (error) {
         // some error occured
+        console.log(error);
         res.status(400).json({ verified: false, error: error });
     }
 })
