@@ -131,7 +131,6 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
             <Box>
                 <Heading>Would you like to store this verifiable credential?</Heading>
                 <Text>Using the identity did:ethr:{storageContents.did.address} </Text>
-                <Text>placeholder</Text>
             </Box>
         );
         // return if user rejects prompt
