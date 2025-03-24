@@ -143,10 +143,10 @@ const Index = () => {
   return (
     <Container>
       <Heading>
-        Welcome to <Span>kyndryl-snap</Span>
+        Welcome to <Span>credential-snap</Span>
       </Heading>
       <Subtitle>
-        Get started by editing <code>src/index.tsx</code>
+        Manage did:ethr identities and credentials.
       </Subtitle>
       <CardContainer>
         {error && (
