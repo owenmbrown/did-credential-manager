@@ -1,8 +1,10 @@
-import { Box, Text, Bold, Heading } from '@metamask/snaps-sdk/jsx';
+import { Box, Text, Bold, Heading, Form, Field, Input, Dropdown, Option, Radio, RadioGroup, Checkbox, Selector, SelectorOption, Card, Button } from '@metamask/snaps-sdk/jsx';
 import { JsonRpcParams, JsonRpcRequest } from '@metamask/snaps-sdk';
 import { ethers } from 'ethers';
-import { createVerifiablePresentationJwt, Issuer, JwtPresentationPayload } from 'did-jwt-vc';
+import { createVerifiablePresentationJwt, Issuer, JwtPresentationPayload, verifyCredential } from 'did-jwt-vc';
 import { EthrDID } from 'ethr-did';
+import { getResolver as getEthrResolver } from 'ethr-did-resolver';
+import { Resolver } from 'did-resolver';
 
 import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt } from './snap-helpers';
 import { StoreVCParams, GetVPParams, StorageContents } from './types'
@@ -116,15 +118,15 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
             }
         }
 
-        // // initialize did:ethr resolver
-        // const resolver = new Resolver({
-        //     ...getEthrResolver({ infuraProjectId: INFURA_PROJECT_ID }),
-        // });
+        // initialize did:ethr resolver
+        const resolver = new Resolver({
+            ...getEthrResolver({ infuraProjectId: INFURA_PROJECT_ID }),
+        });
         
-        // // Verify the VC JWT
-        // const verificationResult = await verifyCredential(vc, resolver);
+        // Verify the VC JWT
+        const verificationResult = await verifyCredential(vc, resolver);
 
-        // console.log(verificationResult);
+        console.log(verificationResult);
 
         // ask user for consent
         const approval = await displayConfirmation(
