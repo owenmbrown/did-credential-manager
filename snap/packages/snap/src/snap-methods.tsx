@@ -248,14 +248,30 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
             }
         }
 
-        // ask user for consent
-        const approval = await displayConfirmation(
-            <Box>
-                <Heading>Would you like to present this app with a verifiable presentation?</Heading>
-                <Text>The app can use this to verify a claim about you.</Text>
-                <Text>This presentation will expire in 1 minute.</Text>
-            </Box>
+        // create a new dialog window
+        await dialogManager.NewDialog();
+
+        // create the process to render the window
+        const renderProcess = dialogManager.Render();
+
+        dialogManager.UpdatePage(
+            <Container>
+                <Box>
+                    <Heading>Would you like to present this app with a verifiable presentation?</Heading>
+                    <Text>The app can use this to verify a claim about you.</Text>
+                    <Text>This presentation will expire in 1 minute.</Text>
+                </Box>
+                <Footer>
+                    <Button type="button" name="confirm" form="userInfoForm">
+                    Confirm
+                    </Button>
+                </Footer>
+            </Container>
         );
+
+        // ask user for consent
+        const approval = ((await dialogManager.WaitForButton()) === "confirm");
+
         // return if user rejects prompt
         if (approval === false) {
             return {
@@ -263,6 +279,9 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
                 message: "user rejected dialogue"
             }
         }
+
+        // display a loading wheel
+        await dialogManager.ShowLoadingPage();
 
         // read values from the storage object we received
         const wallerPrivateKey = storageContents.did.privateKey;
@@ -287,6 +306,18 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
             presentationPayload,
             holderDid
         );
+
+        // display a confirmation alert
+        await dialogManager.UpdatePage(
+            <Box>
+                <Text>
+                    <Bold>Success!</Bold>
+                </Text>
+            </Box>
+        );
+
+        // wait for the user to close the dialog
+        await renderProcess;
 
         return {
             success: true,
