@@ -6,13 +6,16 @@ import { EthrDID } from 'ethr-did';
 import { getResolver as getEthrResolver } from 'ethr-did-resolver';
 import { Resolver } from 'did-resolver';
 
-import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt } from './snap-helpers';
+import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt, DialogManager } from './snap-helpers';
 import { StoreVCParams, GetVPParams, StorageContents } from './types'
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
 // initialized rpc provider
 const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`);
+
+// initalize dialog manager
+let dialogManager = new DialogManager();
 
 export async function snapCreateDID() {
     try {
@@ -300,26 +303,36 @@ function renderDialog(step : number) : ComponentOrElement {
 }
 
 export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
-    console.log("user input");
-    if (event.type === UserInputEventType.FormSubmitEvent) {
-      if (event.name === 'userInfoForm') {
-        // username = event.value as unknown as string;
-        currentStep = 2;
-      }
-    } else if (event.type === UserInputEventType.ButtonClickEvent) {
-      if (event.name === 'next') {
-        currentStep = 2;
-      } else if (event.name === 'back') {
-        currentStep = 1;
-      } else if (event.name === 'confirm') {
-        currentStep = 3;
-      }
+    // let x = 1;
+    // dialogManager.AddButtonCallback("button1",
+    //     () => {
+    //         console.log(x);
+    //     }
+    // );
+    // console.log("user input");
+    // if (event.type === UserInputEventType.FormSubmitEvent) {
+    //   if (event.name === 'userInfoForm') {
+    //     // username = event.value as unknown as string;
+    //     currentStep = 2;
+    //   }
+    // } else if (event.type === UserInputEventType.ButtonClickEvent) {
+    //   if (event.name === 'next') {
+    //     currentStep = 2;
+    //   } else if (event.name === 'back') {
+    //     currentStep = 1;
+    //   } else if (event.name === 'confirm') {
+    //     currentStep = 3;
+    //   }
+    // }
+    // const dialogContent = renderDialog(currentStep);
+    // await snap.request({
+    //     method: 'snap_updateInterface',
+    //     params: { id, ui: dialogContent },
+    // });
+
+    if (event.type === UserInputEventType.ButtonClickEvent) {
+        dialogManager.PressButton(event.name,id);
     }
-    const dialogContent = renderDialog(currentStep);
-  await snap.request({
-    method: 'snap_updateInterface',
-    params: { id, ui: dialogContent },
-  });
 }
 
 export async function snapDialogTest() {
@@ -356,17 +369,50 @@ export async function snapDialogTest() {
     // });
     
     // console.log(state)
-    currentStep = 1;
-    // userData = {};
-    const dialogContent = renderDialog(currentStep);
-    const interfaceId = snap.request({
-      method: 'snap_dialog',
-      params: { content: dialogContent },
-    });
-    console.log("hi")
-    await interfaceId;
-    console.log("hi 2")
-    return interfaceId;
+    // currentStep = 1;
+    // // userData = {};
+    // const dialogContent = renderDialog(currentStep);
+    // const interfaceId = snap.request({
+    //   method: 'snap_dialog',
+    //   params: { content: dialogContent },
+    // });
+    // console.log("hi")
+    // await interfaceId;
+    // console.log("hi 2")
+    // return interfaceId;
 
+    await dialogManager.NewDialog();
 
+    console.log("hi");
+    const renderProcess = dialogManager.Render();
+    
+    console.log("hi 2");
+    
+    await dialogManager.UpdatePage(
+        <Container>
+            <Box>
+                <Heading>Step 1: User Information</Heading>
+                <Form name="userInfoForm">
+                <Input name="username" placeholder="Enter your name" />
+                </Form>
+            </Box>
+            <Footer>
+                <Button type="submit" name="submit" form="userInfoForm">
+                Next
+                </Button>
+            </Footer>
+        </Container>
+    );
+    
+    console.log("hi 3");
+
+    const buttonID = await dialogManager.WaitForButton();
+
+    console.log(buttonID);
+
+    await renderProcess;
+
+    console.log("hi 4");
+
+    return {};
 }
