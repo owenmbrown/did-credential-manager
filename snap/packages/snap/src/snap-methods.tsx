@@ -25,14 +25,29 @@ export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
 
 export async function snapCreateDID() {
     try {
+        await dialogManager.NewDialog();
+
+        const renderProcess = dialogManager.Render();
+
         // ask user for consent
-        const approval = await displayConfirmation(
-            <Box>
+        await dialogManager.UpdatePage(
+            <Container>
+                <Box>
                 <Heading>Would you like to create a new did:ethr?</Heading>
-                <Text>This identity can be used to create and store verifiable credentials.</Text>
-                <Text>Warning: This will overwrite any previous dids that have been stored</Text>
-            </Box>
+                    <Text>This identity can be used to create and store verifiable credentials.</Text>
+                    <Text>Warning: This will overwrite any previous dids that have been stored</Text>
+                </Box>
+                <Footer>
+                    <Button type="button" name="confirm" form="userInfoForm">
+                    Confirm
+                    </Button>
+                </Footer>
+            </Container>
         ); 
+
+        const buttonID = await dialogManager.WaitForButton();
+
+        const approval = (buttonID === "confirm");
 
         // return if user rejects prompt
         if (approval === false) {
@@ -59,14 +74,19 @@ export async function snapCreateDID() {
         });
 
         // show a success dialogue
-        await displayAlert(
-            <Box>
-                <Heading>Identifier Created</Heading>
-                <Text>
-                    <Bold>did:ethr:{address}</Bold>
-                </Text>
-            </Box>
+        await dialogManager.UpdatePage(
+            <Container>
+                <Box>
+                    <Heading>Identifier Created</Heading>
+                    <Text>
+                        <Bold>did:ethr:{address}</Bold>
+                    </Text>
+                </Box>
+            </Container>
         );
+
+        // wait for the user to close the dialog
+        await renderProcess;
 
         return {
             success: true,
@@ -284,13 +304,16 @@ export async function snapDialogTest() {
     
     console.log("hi 3");
 
+    // wait for the user to press the button
     const buttonID = await dialogManager.WaitForButton();
 
     console.log(buttonID);
 
+    // get the contents of the form
     const contents = await dialogManager.GetFormContents();
     console.log(contents);
 
+    // wait for the user to close the dialog
     await renderProcess;
 
     console.log("hi 4");
