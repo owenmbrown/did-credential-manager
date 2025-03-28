@@ -75,6 +75,18 @@ export class DialogManager {
 
         return this.buttonID;
     }
+    async WaitForDialogClose() {
+        await new Promise<void>((resolve, reject) => {        
+            const checkInterval = setInterval(() => {
+                if (!this.interfaceID) {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 100);
+        });
+
+        return;
+    }
 
     PressButton(buttonID : string | undefined, interfaceID : string | undefined) {
         console.log("press button")
@@ -93,6 +105,9 @@ export class DialogManager {
     }
 
     async NewDialog() {
+        // wait for any other dialog to close
+        await this.WaitForDialogClose();
+
         this.interfaceID = await snap.request({
             method: 'snap_createInterface',
             params: { ui: this.emptyPage },
@@ -106,6 +121,7 @@ export class DialogManager {
         });
 
         this.interfaceID = undefined;
+        this.buttonID = undefined;
     }
 
     async GetFormContents() {
