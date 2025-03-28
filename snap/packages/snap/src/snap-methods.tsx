@@ -58,7 +58,7 @@ export async function snapCreateDID() {
         }
 
         // display a loading wheel
-        dialogManager.ShowLoadingPage();
+        await dialogManager.ShowLoadingPage();
 
         // create a new did:ethr
         const wallet = ethers.Wallet.createRandom();
@@ -159,13 +159,29 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
 
         console.log(verificationResult);
 
+        // create a new dialog window
+        await dialogManager.NewDialog();
+
+        // create the process to render the window
+        const renderProcess = dialogManager.Render();
+
         // ask user for consent
-        const approval = await displayConfirmation(
-            <Box>
-                <Heading>Would you like to store this verifiable credential?</Heading>
-                <Text>Using the identity did:ethr:{storageContents.did.address} </Text>
-            </Box>
+        await dialogManager.UpdatePage(
+            <Container>
+                <Box>
+                    <Heading>Would you like to store this verifiable credential?</Heading>
+                    <Text>Using the identity did:ethr:{storageContents.did.address} </Text>
+                </Box>
+                <Footer>
+                    <Button type="button" name="confirm" form="userInfoForm">
+                    Confirm
+                    </Button>
+                </Footer>
+            </Container>
         );
+
+        const approval = ((await dialogManager.WaitForButton()) === "confirm");
+
         // return if user rejects prompt
         if (approval === false) {
             return {
@@ -174,6 +190,9 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
             }
         }
 
+        // display a loading wheel
+        await dialogManager.ShowLoadingPage();
+
         // update the VC in the object
         storageContents.did.vc = vc
         
@@ -181,13 +200,16 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
         setSnapStorage(storageContents);
 
         // display a confirmation alert
-        await displayAlert(
+        await dialogManager.UpdatePage(
             <Box>
                 <Text>
                     <Bold>Credential stored successfully</Bold>
                 </Text>
             </Box>
         );
+
+        // wait for the user to close the dialog
+        await renderProcess;
 
         return {
             success: true
