@@ -136,8 +136,15 @@ const Index = () => {
     const result = await invokeSnap({
       method: 'get-vp',
       params: { challenge: "12345" }
-  });
+    });
+
     console.log(result)
+  };
+
+  const handleSendDialogTest = async () => {
+    const result = await invokeSnap({
+      method: 'dialog-test',
+    });
   };
 
   return (
@@ -287,6 +294,26 @@ const Index = () => {
                 onClick={handleSendGetVP}
                 disabled={!installedSnap}
                 ButtonText="Get VP"
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Dialog test',
+            description:
+              'test multi-stage dialog',
+            button: (
+              <SendHelloButton
+                onClick={handleSendDialogTest}
+                disabled={!installedSnap}
+                ButtonText="Test"
               />
             ),
           }}

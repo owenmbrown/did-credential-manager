@@ -1,7 +1,8 @@
 import type { OnRpcRequestHandler } from '@metamask/snaps-sdk';
 import { Box, Text, Bold, Heading } from '@metamask/snaps-sdk/jsx';
 
-import { snapCreateDID, snapGetDid, snapGetVP, snapStoreVC } from './snap-methods'
+import { snapCreateDID, snapDialogTest, snapGetDid, snapGetVP, snapStoreVC } from './snap-methods'
+import { onUserInput } from './snap-methods'
 
 /**
  * Handle incoming JSON-RPC requests, sent through `wallet_invokeSnap`.
@@ -54,7 +55,13 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
 
             return response;
         }
+        case 'dialog-test': {
+            const response = await snapDialogTest();
+            return response;
+        }
         default:
             throw new Error('Method not found.');
     }
 };
+
+export { onUserInput };

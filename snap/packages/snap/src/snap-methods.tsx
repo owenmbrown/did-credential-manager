@@ -1,5 +1,5 @@
-import { Box, Text, Bold, Heading, Form, Field, Input, Dropdown, Option, Radio, RadioGroup, Checkbox, Selector, SelectorOption, Card, Button } from '@metamask/snaps-sdk/jsx';
-import { JsonRpcParams, JsonRpcRequest } from '@metamask/snaps-sdk';
+import { Box, Text, Bold, Heading, Form, Field, Input, Dropdown, Option, Radio, RadioGroup, Checkbox, Selector, SelectorOption, Card, Button, Footer, Container } from '@metamask/snaps-sdk/jsx';
+import { ComponentOrElement, JsonRpcParams, JsonRpcRequest, OnUserInputHandler, UserInputEventType } from '@metamask/snaps-sdk';
 import { ethers } from 'ethers';
 import { createVerifiablePresentationJwt, Issuer, JwtPresentationPayload, verifyCredential } from 'did-jwt-vc';
 import { EthrDID } from 'ethr-did';
@@ -247,4 +247,126 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
             message: "runtime error",
         }
     }
+}
+
+let currentStep = 1;
+let username = ""
+
+function renderDialog(step : number) : ComponentOrElement {
+    switch (step) {
+    case 1:
+        return (
+            <Container>
+                <Box>
+                    <Heading>Step 1: User Information</Heading>
+                    <Form name="userInfoForm">
+                    <Input name="username" placeholder="Enter your name" />
+                    </Form>
+                </Box>
+                <Footer>
+                    <Button type="submit" form="userInfoForm">
+                    Next
+                    </Button>
+                </Footer>
+            </Container>
+        );
+    case 2:
+        return (
+            <Container>
+            <Box>
+                <Heading>Step 2: Confirmation</Heading>
+                <Text>
+                Hello, {username} ! Do you confirm the action?
+                </Text>
+            </Box>
+            <Footer>
+                <Button name="back">Back</Button>
+                <Button name="confirm">Confirm</Button>
+            </Footer>
+            </Container>
+        );
+    case 3:
+        return (
+            <Container>
+            <Box>
+                <Heading>Success</Heading>
+                <Text>Your action has been successfully completed.</Text>
+            </Box>
+            </Container>
+        );
+    default:
+        return <Box><Text>error</Text></Box>;
+    }
+}
+
+export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
+    console.log("user input");
+    if (event.type === UserInputEventType.FormSubmitEvent) {
+      if (event.name === 'userInfoForm') {
+        // username = event.value as unknown as string;
+        currentStep = 2;
+      }
+    } else if (event.type === UserInputEventType.ButtonClickEvent) {
+      if (event.name === 'next') {
+        currentStep = 2;
+      } else if (event.name === 'back') {
+        currentStep = 1;
+      } else if (event.name === 'confirm') {
+        currentStep = 3;
+      }
+    }
+    const dialogContent = renderDialog(currentStep);
+  await snap.request({
+    method: 'snap_updateInterface',
+    params: { id, ui: dialogContent },
+  });
+}
+
+export async function snapDialogTest() {
+    // const interfaceId = await snap.request({
+    //     method: "snap_createInterface",
+    //     params: {
+    //       ui: (
+    //         <Box>
+    //           <Heading>Interactive UI Example Snap</Heading>
+    //           <Input name="top-level-input" placeholder="Enter something"/>
+    //           <Form name="example-form">
+    //             <Input name="nested-input" placeholder="Enter something"/>
+    //             <Button type="submit">Submit</Button>
+    //           </Form>
+    //         </Box>
+    //       )
+    //     },
+    // });
+
+    // await snap.request({
+    //     method: "snap_dialog",
+    //     params: {
+    //       type: "alert",
+    //       id: interfaceId
+    //     }
+    // });
+
+
+    // const state = await snap.request({
+    //     method: "snap_getInterfaceState",
+    //     params: {
+    //         id: interfaceId,
+    //     },
+    // });
+    
+    // console.log(state)
+    currentStep = 1;
+    // userData = {};
+    const dialogContent = renderDialog(currentStep);
+    const interfaceId = snap.request({
+      method: 'snap_dialog',
+      params: { content: dialogContent },
+    });
+    console.log("hi")
+    await interfaceId;
+    console.log("hi 2")
+    return interfaceId;
+
+
 }
