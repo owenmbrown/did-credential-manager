@@ -108,6 +108,15 @@ export class DialogManager {
         this.interfaceID = undefined;
     }
 
+    async GetFormContents() {
+        return await snap.request({
+            method: 'snap_getInterfaceState',
+            params: {
+              id: this.interfaceID as string,
+            },
+        });
+    }
+
     private emptyPage = (
         <Box>
             <Heading>Loading</Heading>

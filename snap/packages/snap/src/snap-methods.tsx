@@ -17,6 +17,12 @@ const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${INFU
 // initalize dialog manager
 let dialogManager = new DialogManager();
 
+export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
+    if (event.type === UserInputEventType.ButtonClickEvent) {
+        dialogManager.PressButton(event.name,id);
+    }
+}
+
 export async function snapCreateDID() {
     try {
         // ask user for consent
@@ -252,12 +258,6 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
     }
 }
 
-export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
-    if (event.type === UserInputEventType.ButtonClickEvent) {
-        dialogManager.PressButton(event.name,id);
-    }
-}
-
 export async function snapDialogTest() {
     await dialogManager.NewDialog();
 
@@ -287,6 +287,9 @@ export async function snapDialogTest() {
     const buttonID = await dialogManager.WaitForButton();
 
     console.log(buttonID);
+
+    const contents = await dialogManager.GetFormContents();
+    console.log(contents);
 
     await renderProcess;
 
