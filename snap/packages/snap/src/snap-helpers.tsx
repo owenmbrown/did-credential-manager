@@ -1,6 +1,6 @@
 import { button, ComponentOrElement, Json } from '@metamask/snaps-sdk';
 import { StoreVCParams, GetVPParams, StorageContents } from './types'
-import { Box, Heading } from '@metamask/snaps-sdk/jsx';
+import { Box, Heading, Spinner } from '@metamask/snaps-sdk/jsx';
 
 // get current state of snap secure storage
 export async function getSnapStorage() : Promise<StorageContents | null> {
@@ -112,14 +112,19 @@ export class DialogManager {
         return await snap.request({
             method: 'snap_getInterfaceState',
             params: {
-              id: this.interfaceID as string,
+                id: this.interfaceID as string,
             },
         });
     }
 
+    async ShowLoadingPage() {
+        this.UpdatePage(this.emptyPage);
+    }
+
     private emptyPage = (
-        <Box>
-            <Heading>Loading</Heading>
+        <Box center={true}>
+            <Heading>Loading...</Heading>
+            <Spinner />
         </Box>
     )
 }

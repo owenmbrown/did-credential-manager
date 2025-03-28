@@ -1,4 +1,4 @@
-import { Box, Text, Bold, Heading, Form, Field, Input, Dropdown, Option, Radio, RadioGroup, Checkbox, Selector, SelectorOption, Card, Button, Footer, Container } from '@metamask/snaps-sdk/jsx';
+import { Box, Text, Bold, Heading, Form, Field, Input, Dropdown, Option, Radio, RadioGroup, Checkbox, Selector, SelectorOption, Card, Button, Footer, Container, Row, Address, Copyable, Divider } from '@metamask/snaps-sdk/jsx';
 import { ComponentOrElement, JsonRpcParams, JsonRpcRequest, OnUserInputHandler, UserInputEventType } from '@metamask/snaps-sdk';
 import { ethers } from 'ethers';
 import { createVerifiablePresentationJwt, Issuer, JwtPresentationPayload, verifyCredential } from 'did-jwt-vc';
@@ -33,7 +33,7 @@ export async function snapCreateDID() {
         await dialogManager.UpdatePage(
             <Container>
                 <Box>
-                <Heading>Would you like to create a new did:ethr?</Heading>
+                    <Heading>Would you like to create a new did:ethr?</Heading>
                     <Text>This identity can be used to create and store verifiable credentials.</Text>
                     <Text>Warning: This will overwrite any previous dids that have been stored</Text>
                 </Box>
@@ -57,6 +57,9 @@ export async function snapCreateDID() {
             }
         }
 
+        // display a loading wheel
+        dialogManager.ShowLoadingPage();
+
         // create a new did:ethr
         const wallet = ethers.Wallet.createRandom();
 
@@ -76,11 +79,10 @@ export async function snapCreateDID() {
         // show a success dialogue
         await dialogManager.UpdatePage(
             <Container>
-                <Box>
+                <Box center={true}>
                     <Heading>Identifier Created</Heading>
-                    <Text>
-                        <Bold>did:ethr:{address}</Bold>
-                    </Text>
+                    <Divider />
+                    <Copyable value={`did:ethr:${address}`} />
                 </Box>
             </Container>
         );
