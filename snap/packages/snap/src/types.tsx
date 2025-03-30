@@ -1,3 +1,5 @@
+import { VerifiedCredential } from "did-jwt-vc"
+
 export type StoreVCParams = {
     vc: string
 }
@@ -12,4 +14,13 @@ export type StorageContents = {
         address: string,
         vc: string
     }
+}
+
+export type CredentialContents = {
+    vc: string,
+    issuer: string,
+    subject: string,
+    claim: object,
+    claimString: string,
+    jwt: VerifiedCredential,
 }

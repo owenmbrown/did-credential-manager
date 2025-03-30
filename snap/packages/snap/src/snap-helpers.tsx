@@ -1,6 +1,12 @@
-import { button, ComponentOrElement, Json } from '@metamask/snaps-sdk';
-import { StoreVCParams, GetVPParams, StorageContents } from './types'
+import { ComponentOrElement, Json } from '@metamask/snaps-sdk';
 import { Box, Heading, Spinner } from '@metamask/snaps-sdk/jsx';
+import { getResolver as getEthrResolver } from 'ethr-did-resolver';
+import { Resolver } from 'did-resolver';
+import { verifyCredential } from 'did-jwt-vc';
+
+import { StoreVCParams, GetVPParams, StorageContents, CredentialContents } from './types';
+
+const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
 // get current state of snap secure storage
 export async function getSnapStorage() : Promise<StorageContents | null> {
@@ -50,6 +56,27 @@ export async function displayConfirmation(content : ComponentOrElement) : Promis
 export async function displayPrompt(content : ComponentOrElement) : Promise<string> {
     return (await displayDialogue(content,'prompt')) as string;
 }
+
+
+export async function getCredentialContents(vc: string) : Promise<CredentialContents> {
+    // initialize did:ethr resolver
+    const resolver = new Resolver({
+        ...getEthrResolver({ infuraProjectId: INFURA_PROJECT_ID }),
+    });
+    
+    // Verify the VC JWT
+    const verificationResult = await verifyCredential(vc, resolver);
+
+    return {
+        vc,
+        issuer: verificationResult.issuer,
+        subject: verificationResult.payload.subject as string,
+        claim: verificationResult.payload.vc.credentialSubject,
+        claimString: JSON.stringify(verificationResult.payload.vc.credentialSubject, null, 2),
+        jwt: verificationResult
+    }
+}
+
 
 export class DialogManager {
     private interfaceID: string | undefined;
