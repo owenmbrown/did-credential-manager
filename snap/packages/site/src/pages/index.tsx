@@ -141,6 +141,14 @@ const Index = () => {
     console.log(result)
   };
 
+  const handleSendManageVCs = async () => {
+    const result = await invokeSnap({
+      method: 'manage-vcs',
+    });
+
+    console.log(result);
+  };
+
   const handleSendDialogTest = async () => {
     const result = await invokeSnap({
       method: 'dialog-test',
@@ -294,6 +302,26 @@ const Index = () => {
                 onClick={handleSendGetVP}
                 disabled={!installedSnap}
                 ButtonText="Get VP"
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Manage Credentials',
+            description:
+              'Manage your stored verifiable credentials',
+            button: (
+              <SendHelloButton
+                onClick={handleSendManageVCs}
+                disabled={!installedSnap}
+                ButtonText="Manage"
               />
             ),
           }}

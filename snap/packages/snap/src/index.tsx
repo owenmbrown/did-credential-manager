@@ -1,7 +1,7 @@
 import type { OnRpcRequestHandler } from '@metamask/snaps-sdk';
 import { Box, Text, Bold, Heading } from '@metamask/snaps-sdk/jsx';
 
-import { snapCreateDID, snapDialogTest, snapGetDid, snapGetVP, snapStoreVC } from './snap-methods'
+import { snapCreateDID, snapDialogTest, snapGetDid, snapGetVP, snapManageVCs, snapStoreVC } from './snap-methods'
 import { onUserInput } from './snap-methods'
 
 /**
@@ -52,6 +52,11 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
         }
         case 'get-vp': {
             const response = await snapGetVP(request);
+
+            return response;
+        }
+        case 'manage-vcs': {
+            const response = await snapManageVCs();
 
             return response;
         }

@@ -7,7 +7,7 @@ import { getResolver as getEthrResolver } from 'ethr-did-resolver';
 import { Resolver } from 'did-resolver';
 
 import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt, DialogManager, getCredentialContents } from './snap-helpers';
-import { StoreVCParams, GetVPParams, StorageContents } from './types'
+import { StoreVCParams, GetVPParams, StorageContents, CredentialContents } from './types'
 import { DID, InclusiveRow, CredentialCard } from './components'
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
@@ -73,7 +73,7 @@ export async function snapCreateDID() {
             did: {
                 privateKey,
                 address,
-                vc: ""
+                credentials: [],
             }
         });
 
@@ -190,8 +190,15 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
         // display a loading wheel
         await dialogManager.ShowLoadingPage();
 
+        const name = "temp";
+        const uuid = crypto.randomUUID();
+
         // update the VC in the object
-        storageContents.did.vc = vc
+        storageContents.did.credentials.push({
+            name,
+            uuid,
+            vc,
+        });
         
         // store the VC in secure storage
         setSnapStorage(storageContents);
@@ -236,7 +243,7 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
         const storageContents = await getSnapStorage();
         
         // verify data is formatted correctly
-        if (!storageContents || storageContents.did.vc == "") {
+        if (!storageContents /*|| storageContents.did.vc == ""*/) {
             return {
                 success: false,
                 message: "no vc is stored"
@@ -280,7 +287,8 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
 
         // read values from the storage object we received
         const wallerPrivateKey = storageContents.did.privateKey;
-        const vc = storageContents.did.vc;
+        // const vc = storageContents.did.vc;
+        const vc = "storageContents.did.vc";
 
         // Create an EthrDID object for the issuer
         const wallet = new ethers.Wallet(wallerPrivateKey, provider);
@@ -317,6 +325,66 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
         return {
             success: true,
             vp: signedPresentationJwt
+        }
+    }
+    catch (error) {
+        console.log(error)
+        return {
+            success: false,
+            message: "runtime error",
+        }
+    }
+}
+
+export async function snapManageVCs() {
+    try  {
+        // get current state of snap secure storage
+        const storageContents = await getSnapStorage();
+            
+        // verify data is formatted correctly
+        if (!storageContents /*|| storageContents.did.vc == ""*/) {
+            return {
+                success: false,
+                message: "no vc is stored"
+            }
+        }
+    
+        // create a new dialog window
+        await dialogManager.NewDialog();
+    
+        // create the process to render the window
+        const renderProcess = dialogManager.Render();
+
+        const credentials = new Array<CredentialContents>();
+        for (let i = 0; i < storageContents.did.credentials.length; i++) {
+            const credential = storageContents.did.credentials[i];
+
+            if (!credential) break;
+
+            const credentialContents = await getCredentialContents(credential.vc);
+            credentialContents.name = credential.name;
+            credentialContents.uuid = credential.uuid;
+
+            credentials.push(credentialContents);
+        }
+
+        dialogManager.UpdatePage(
+            <Box center={true}>
+                <Heading>Credentials</Heading>
+                <Divider />
+                {
+                    credentials.length > 0 ? credentials.map((item,index) => (
+                        <CredentialCard verifiableCredential={item} />
+                    )) : (<Text>You have no credentials stored right now</Text>)
+                }
+            </Box>
+        );
+
+        // wait for the user to close the dialog
+        await renderProcess;
+
+        return {
+            success: true,
         }
     }
     catch (error) {
