@@ -7,7 +7,8 @@ import { getResolver as getEthrResolver } from 'ethr-did-resolver';
 import { Resolver } from 'did-resolver';
 
 import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt, DialogManager } from './snap-helpers';
-import { StoreVCParams, GetVPParams, StorageContents, DID, InclusiveRow } from './types'
+import { StoreVCParams, GetVPParams, StorageContents } from './types'
+import { DID, InclusiveRow } from './components'
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
