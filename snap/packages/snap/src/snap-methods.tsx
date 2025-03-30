@@ -6,9 +6,9 @@ import { EthrDID } from 'ethr-did';
 import { getResolver as getEthrResolver } from 'ethr-did-resolver';
 import { Resolver } from 'did-resolver';
 
-import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt, DialogManager } from './snap-helpers';
+import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt, DialogManager, getCredentialContents } from './snap-helpers';
 import { StoreVCParams, GetVPParams, StorageContents } from './types'
-import { DID, InclusiveRow } from './components'
+import { DID, InclusiveRow, CredentialCard } from './components'
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
@@ -150,25 +150,15 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
             }
         }
 
-        // initialize did:ethr resolver
-        const resolver = new Resolver({
-            ...getEthrResolver({ infuraProjectId: INFURA_PROJECT_ID }),
-        });
-        
-        // Verify the VC JWT
-        const verificationResult = await verifyCredential(vc, resolver);
-        
-        console.log(verificationResult);
+        // parse the VC to get it's contents
+        const credentialContents = await getCredentialContents(vc);        
+        console.log(credentialContents.jwt);
         
         // create a new dialog window
         await dialogManager.NewDialog();
         
         // create the process to render the window
         const renderProcess = dialogManager.Render();
-        
-        // convert the credential into a string to show to the user
-        const credentialString = JSON.stringify(verificationResult.payload.vc.credentialSubject, null, 2);
-        const didAddress = storageContents.did.address;
 
         // TODO: verify the address in storage matches the address in the credential
 
@@ -177,20 +167,7 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
             <Container>
                 <Box>
                     <Heading>Would you like to store this verifiable credential?</Heading>
-                    <Box>
-                        <Section>
-                            <Heading>Credendial</Heading>
-                            <InclusiveRow label="Issuer">
-                                <DID did={verificationResult.issuer} />
-                            </InclusiveRow>
-                            <InclusiveRow label="Subject (you)">
-                                <DID did={didAddress} />
-                            </InclusiveRow>
-                            <InclusiveRow label="Claim">
-                                <Text>{credentialString}</Text>
-                            </InclusiveRow>
-                        </Section>
-                    </Box>
+                    <CredentialCard verifiableCredential={credentialContents}/>
                 </Box>
                 <Footer>
                     <Button type="button" name="confirm" form="userInfoForm">
