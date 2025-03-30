@@ -1,4 +1,4 @@
-import { Box, Text, Bold, Heading, Form, Field, Input, Dropdown, Option, Radio, RadioGroup, Checkbox, Selector, SelectorOption, Card, Button, Footer, Container, Row, Address, Copyable, Divider } from '@metamask/snaps-sdk/jsx';
+import { Box, Text, Bold, Heading, Form, Field, Input, Dropdown, Option, Radio, RadioGroup, Checkbox, Selector, SelectorOption, Card, Button, Footer, Container, Row, Address, Copyable, Divider, Section } from '@metamask/snaps-sdk/jsx';
 import { ComponentOrElement, JsonRpcParams, JsonRpcRequest, OnUserInputHandler, UserInputEventType } from '@metamask/snaps-sdk';
 import { ethers } from 'ethers';
 import { createVerifiablePresentationJwt, Issuer, JwtPresentationPayload, verifyCredential } from 'did-jwt-vc';
@@ -7,7 +7,7 @@ import { getResolver as getEthrResolver } from 'ethr-did-resolver';
 import { Resolver } from 'did-resolver';
 
 import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt, DialogManager } from './snap-helpers';
-import { StoreVCParams, GetVPParams, StorageContents } from './types'
+import { StoreVCParams, GetVPParams, StorageContents, DID, InclusiveRow } from './types'
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
@@ -65,7 +65,7 @@ export async function snapCreateDID() {
 
         // Extract keys and address
         const privateKey = wallet.privateKey;
-        const address = wallet.address;
+        const address = `did:ethr:${wallet.address}`;
 
         // Update the state storage to include
         setSnapStorage({ 
@@ -82,7 +82,7 @@ export async function snapCreateDID() {
                 <Box center={true}>
                     <Heading>Identifier Created</Heading>
                     <Divider />
-                    <Copyable value={`did:ethr:${address}`} />
+                    <Copyable value={address} />
                 </Box>
             </Container>
         );
@@ -156,21 +156,40 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
         
         // Verify the VC JWT
         const verificationResult = await verifyCredential(vc, resolver);
-
+        
         console.log(verificationResult);
-
+        
         // create a new dialog window
         await dialogManager.NewDialog();
-
+        
         // create the process to render the window
         const renderProcess = dialogManager.Render();
+        
+        // convert the credential into a string to show to the user
+        const credentialString = JSON.stringify(verificationResult.payload.vc.credentialSubject, null, 2);
+        const didAddress = storageContents.did.address;
+
+        // TODO: verify the address in storage matches the address in the credential
 
         // ask user for consent
         await dialogManager.UpdatePage(
             <Container>
                 <Box>
                     <Heading>Would you like to store this verifiable credential?</Heading>
-                    <Text>Using the identity did:ethr:{storageContents.did.address} </Text>
+                    <Box>
+                        <Section>
+                            <Heading>Credendial</Heading>
+                            <InclusiveRow label="Issuer">
+                                <DID did={verificationResult.issuer} />
+                            </InclusiveRow>
+                            <InclusiveRow label="Subject (you)">
+                                <DID did={didAddress} />
+                            </InclusiveRow>
+                            <InclusiveRow label="Claim">
+                                <Text>{credentialString}</Text>
+                            </InclusiveRow>
+                        </Section>
+                    </Box>
                 </Box>
                 <Footer>
                     <Button type="button" name="confirm" form="userInfoForm">
@@ -201,10 +220,8 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
 
         // display a confirmation alert
         await dialogManager.UpdatePage(
-            <Box>
-                <Text>
-                    <Bold>Credential stored successfully</Bold>
-                </Text>
+            <Box center={true}>
+                <Heading>Credential stored successfully</Heading>
             </Box>
         );
 
