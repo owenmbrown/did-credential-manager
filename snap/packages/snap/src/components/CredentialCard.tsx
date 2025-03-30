@@ -6,6 +6,7 @@ import { CredentialContents } from "src/types";
 type CredentialCardProps = {
     verifiableCredential: {
         vc: string,
+        name?: string | null,
         issuer: string,
         subject: string,
         claimString: string,
@@ -17,7 +18,11 @@ export const CredentialCard: SnapComponent<CredentialCardProps> = ({
 }) => {
     return (
         <Section>
-            <Heading>Credendial</Heading>
+            <Heading>
+                {
+                    verifiableCredential.name ?? "Credential"
+                }
+            </Heading>
             <InclusiveRow label="Issuer">
                 <DID did={verifiableCredential.issuer} />
             </InclusiveRow>

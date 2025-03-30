@@ -18,6 +18,7 @@ export type StorageContents = {
 
 export type CredentialContents = {
     vc: string,
+    name?: string | null,
     issuer: string,
     subject: string,
     claim: object,
