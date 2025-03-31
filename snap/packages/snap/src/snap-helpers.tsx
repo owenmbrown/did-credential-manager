@@ -114,7 +114,7 @@ export class DialogManager {
                         clearInterval(checkInterval);
                         resolve();
                     }
-                }, 100);
+                }, 10);
             });
 
             if (!(this.interfaceID === oldInterface) || !this.interfaceID) return undefined;
