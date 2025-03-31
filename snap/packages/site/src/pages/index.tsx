@@ -128,7 +128,7 @@ const Index = () => {
   const handleSendStoreVC = async () => {
     const result = await invokeSnap({
       method: 'store-vc',
-      params: { vc: "eyJhbGciOiJFUzI1NkstUiIsInR5cCI6IkpXVCJ9.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImFnZSI6MjV9fSwic3ViamVjdCI6ImRpZDpldGhyOjB4ZmU0NTY4MDM4NzU5YjczOUQ2ZWJFMDVhMDM0NTNiNmM5ODlENzFlMyIsIm5iZiI6MTc0MjQyNDcyMywiaXNzIjoiZGlkOmV0aHI6MHhmZTQ1NjgwMzg3NTliNzM5RDZlYkUwNWEwMzQ1M2I2Yzk4OUQ3MWUzIn0.dko-li1KduwZ2FUPP4wqb3WDCB6nefgKny8WtwXp8rB6sK4xXHd2pGJCjGvrbFT2yaVEMjw-DMrJUf9xW7sFBAA" }
+      params: { vc: "eyJhbGciOiJFUzI1NkstUiIsInR5cCI6IkpXVCJ9.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImFnZSI6MjV9fSwic3ViamVjdCI6ImRpZDpldGhyOjB4NzE1NTcwNTVCN0IxNWIwNDY3MTQ1MzM2NEZBMzMwNDc0MTRGMTk4RiIsIm5iZiI6MTc0MzQ1MjgwNSwiaXNzIjoiZGlkOmV0aHI6MHhmZTQ1NjgwMzg3NTliNzM5RDZlYkUwNWEwMzQ1M2I2Yzk4OUQ3MWUzIn0.DJNHMHgeyCmZHv9qymcKHGTpXTOXz7U61qIko_LtKFESdiMij8wynpL_OlnY9-NAvEfBu_VRZpShl2gsAGGWBwE" }
     });
     console.log(result);
   };
@@ -147,12 +147,6 @@ const Index = () => {
     });
 
     console.log(result);
-  };
-
-  const handleSendDialogTest = async () => {
-    const result = await invokeSnap({
-      method: 'dialog-test',
-    });
   };
 
   return (
@@ -322,26 +316,6 @@ const Index = () => {
                 onClick={handleSendManageVCs}
                 disabled={!installedSnap}
                 ButtonText="Manage"
-              />
-            ),
-          }}
-          disabled={!installedSnap}
-          fullWidth={
-            isMetaMaskReady &&
-            Boolean(installedSnap) &&
-            !shouldDisplayReconnectButton(installedSnap)
-          }
-        />
-        <Card
-          content={{
-            title: 'Dialog test',
-            description:
-              'test multi-stage dialog',
-            button: (
-              <SendHelloButton
-                onClick={handleSendDialogTest}
-                disabled={!installedSnap}
-                ButtonText="Test"
               />
             ),
           }}

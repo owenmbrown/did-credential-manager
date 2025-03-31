@@ -444,23 +444,51 @@ export async function snapManageVCs() {
 
         const credentials = await getCredentialsContentList(storageContents.did.credentials);
 
-        dialogManager.UpdatePage(
-            <Box center={true}>
-                <Heading>Credentials</Heading>
-                <Divider />
-                {
-                    credentials.length > 0 ? credentials.map((item,index) => (
-                        <CredentialCard verifiableCredential={item} />
-                    )) : (<Text>You have no credentials stored right now</Text>)
+        let selectedCredentialID : string | null | undefined;
+
+        while (true) {
+            dialogManager.UpdatePage(
+                <Box>
+                    <Box center={true}>
+                        <Heading>Credentials</Heading>
+                    </Box>
+                    <Divider />
+                    {
+                        credentials.length > 0 ? credentials.map((item,index) => (
+                                selectedCredentialID === item.uuid ?
+                                    <CredentialCard
+                                        verifiableCredential={item}
+                                        doNameInputField 
+                                        nameInputContents={item.name as string} 
+                                        nameInputFieldID="credential-name-input" 
+                                        nameInputPlaceholder="New Credential Name"
+                                    />
+                                    : 
+                                    <CredentialCard
+                                        verifiableCredential={item}
+                                        doEditButton={true}
+                                        editButtonId={`edit-${item.uuid}`}
+                                    />
+                        )) : (<Text>You have no credentials stored right now</Text>)
+                    }
+                </Box>
+            );
+
+            // wait for user interaction
+            const userInteraction = await dialogManager.WaitForInteraction();
+            
+            // user selects a credential to edit
+            if (userInteraction?.interactionType === "button" && userInteraction?.interactionID.startsWith("edit")) {
+                selectedCredentialID = userInteraction?.interactionID.replace("edit-","")
+            }
+            // return if user rejects prompt
+            else {
+                return {
+                    success: false,
+                    message: "user rejected dialogue"
                 }
-                <Button name="interactive-button">Click me</Button>
-                <Dropdown name="interactive-dropdown">
-                    <Option value="option 1">1st option</Option>
-                    <Option value="option 2">2nd option</Option>
-                    <Option value="option 3">3rd option</Option>
-                </Dropdown>
-            </Box>
-        );
+            }
+        }
 
         // wait for the user to close the dialog
         await renderProcess;

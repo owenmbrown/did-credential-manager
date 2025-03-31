@@ -1,4 +1,4 @@
-import { Form, Heading, Input, Section, SnapComponent, Text } from "@metamask/snaps-sdk/jsx";
+import { Button, Form, Heading, Input, Section, SnapComponent, Text } from "@metamask/snaps-sdk/jsx";
 
 import { InclusiveRow, DID } from "../components";
 import { CredentialContents } from "src/types";
@@ -15,6 +15,8 @@ type CredentialCardProps = {
     nameInputFieldID?: string,
     nameInputPlaceholder?: string
     nameInputContents?: string,
+    doEditButton?: boolean,
+    editButtonId?: string,
 }
 
 export const CredentialCard: SnapComponent<CredentialCardProps> = ({ 
@@ -23,6 +25,9 @@ export const CredentialCard: SnapComponent<CredentialCardProps> = ({
     nameInputFieldID = "",
     nameInputPlaceholder = "",
     nameInputContents = "",
+    doEditButton = false,
+    editButtonId = ""
+
 }) => {
     return (
         <Section>
@@ -48,6 +53,13 @@ export const CredentialCard: SnapComponent<CredentialCardProps> = ({
             <InclusiveRow label="Claim">
                 <Text>{verifiableCredential.claimString}</Text>
             </InclusiveRow>
+            {
+                doEditButton ? (
+                    <InclusiveRow label="">
+                        <Button name={editButtonId}>Edit</Button>
+                    </InclusiveRow>
+                ) : null
+            }
         </Section>
     );
 };
