@@ -1,4 +1,4 @@
-import { Box, Text, Bold, Heading, Form, Field, Input, Dropdown, Option, Radio, RadioGroup, Checkbox, Selector, SelectorOption, Card, Button, Footer, Container, Row, Address, Copyable, Divider, Section } from '@metamask/snaps-sdk/jsx';
+import { Box, Text, Bold, Heading, Form, Field, Input, Dropdown, Option, Radio, RadioGroup, Checkbox, Selector, SelectorOption, Card, Button, Footer, Container, Row, Address, Copyable, Divider, Section, Nestable, GenericSnapElement, Spinner } from '@metamask/snaps-sdk/jsx';
 import { ComponentOrElement, JsonRpcParams, JsonRpcRequest, OnUserInputHandler, UserInputEventType } from '@metamask/snaps-sdk';
 import { ethers } from 'ethers';
 import { createVerifiablePresentationJwt, Issuer, JwtPresentationPayload, verifyCredential } from 'did-jwt-vc';
@@ -267,31 +267,41 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
         let chosenCredential : CredentialContents | undefined;
 
         while (true) {
-            dialogManager.UpdatePage(
-                <Container>
-                    <Box>
-                        <Heading>Would you like to present this app with a verifiable presentation?</Heading>
-                        <Text>The app can use this to verify a claim about you.</Text>
-                        <Text>This presentation will expire in 1 minute.</Text>
-                        <Dropdown name="credential-selection-dropdown">
-                            <Option value="none">Choose a Credential</Option>
-                            {
-                                credentials.map((item,index) => (
-                                    <Option value={item.uuid as string}>{item.name as string}</Option>
-                                ))
-                            }
-                        </Dropdown>
-                        {chosenCredential ? (
-                            <CredentialCard verifiableCredential={chosenCredential}/>
-                        ) : null }
-                    </Box>
-                    <Footer>
-                        <Button type="button" name="confirm" form="userInfoForm">
-                        Confirm
-                        </Button>
-                    </Footer>
-                </Container>
+            // component for the dialog box, that we can pass the credential if we want
+            const pageComponent = (
+                <Box>
+                    <Heading>Would you like to present this app with a verifiable presentation?</Heading>
+                    <Text>The app can use this to verify a claim about you.</Text>
+                    <Text>This presentation will expire in 1 minute.</Text>
+                    <Dropdown name="credential-selection-dropdown">
+                        <Option value="none">Choose a Credential</Option>
+                        {
+                            credentials.map((item,index) => (
+                                <Option value={item.uuid as string}>{item.name as string}</Option>
+                            ))
+                        }
+                    </Dropdown>
+                    {chosenCredential ? (<CredentialCard verifiableCredential={chosenCredential}/>) : null}
+                </Box>
             );
+
+            if (chosenCredential) {
+                // page with confirm button
+                await dialogManager.UpdatePage(
+                    <Container>
+                        {pageComponent}
+                        <Footer>
+                            <Button type="button" name="confirm" form="userInfoForm">
+                            Confirm
+                            </Button>
+                        </Footer>
+                    </Container>
+                );
+            }
+            else {
+                // page without confirm button
+                await dialogManager.UpdatePage(pageComponent);
+            }
 
             const userInput = await dialogManager.WaitForInput();
             
