@@ -306,8 +306,8 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
             const userInput = await dialogManager.WaitForInput();
             
             // user consents
-            if (userInput?.inputType === "button" && userInput?.inputID === "button") {
-                break;
+            if (userInput?.inputType === "button" && userInput?.inputID === "confirm") {
+                if (chosenCredential) break;
             }
             // user chose a credential from the dropdown
             else if (userInput?.inputType === "dropdown" && userInput?.inputID === "credential-selection-dropdown") {
@@ -338,8 +338,7 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
 
         // read values from the storage object we received
         const wallerPrivateKey = storageContents.did.privateKey;
-        // const vc = storageContents.did.vc;
-        const vc = "storageContents.did.vc";
+        const vc = chosenCredential.vc;
 
         // Create an EthrDID object for the issuer
         const wallet = new ethers.Wallet(wallerPrivateKey, provider);
@@ -364,9 +363,13 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
         // display a confirmation alert
         await dialogManager.UpdatePage(
             <Box>
-                <Text>
-                    <Bold>Success!</Bold>
-                </Text>
+                <Box center={true}>
+                    <Heading>
+                        Successfully presented
+                    </Heading>
+                </Box>
+                <Divider/>
+                <CredentialCard verifiableCredential={chosenCredential}/>
             </Box>
         );
 
