@@ -4,7 +4,7 @@ import { getResolver as getEthrResolver } from 'ethr-did-resolver';
 import { Resolver } from 'did-resolver';
 import { verifyCredential } from 'did-jwt-vc';
 
-import { StoreVCParams, GetVPParams, StorageContents, CredentialContents, Credential, UserInput } from './types';
+import { StoreVCParams, GetVPParams, StorageContents, CredentialContents, Credential, UserInteraction } from './types';
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
@@ -98,19 +98,19 @@ export async function getCredentialsContentList(storedCredentials : Credential[]
 
 export class DialogManager {
     private interfaceID: string | undefined;
-    private userInput: UserInput | undefined;
+    private userInteraction: UserInteraction | undefined;
 
-    async WaitForInput() {
+    async WaitForInteraction() {
         try {
-            const oldInput    = this.userInput;
-            const oldInterface = this.interfaceID;
+            const oldInteraction = this.userInteraction;
+            const oldInterface   = this.interfaceID;
 
             await new Promise<void>((resolve, reject) => {        
                 const checkInterval = setInterval(() => {
-                    const currentInput = this.userInput;
-                    const currentInterface = this.interfaceID;
+                    const currentInteraction = this.userInteraction;
+                    const currentInterface   = this.interfaceID;
                     
-                    if (!(currentInput === oldInput) || !(currentInterface === oldInterface) || !currentInterface) {
+                    if (!(currentInteraction === oldInteraction) || !(currentInterface === oldInterface) || !currentInterface) {
                         clearInterval(checkInterval);
                         resolve();
                     }
@@ -119,10 +119,10 @@ export class DialogManager {
 
             if (!(this.interfaceID === oldInterface) || !this.interfaceID) return undefined;
 
-            return this.userInput;
+            return this.userInteraction;
         }
         finally {
-            this.userInput = undefined;
+            this.userInteraction = undefined;
         }
     }
     async WaitForDialogClose() {
@@ -140,18 +140,18 @@ export class DialogManager {
 
     UseButton(buttonID : string | undefined, interfaceID : string | undefined) {
         if (buttonID && interfaceID && interfaceID === this.interfaceID) {
-            this.userInput = {
-                inputID: buttonID,
-                inputType: "button"
+            this.userInteraction = {
+                interactionID: buttonID,
+                interactionType: "button"
             };
         }
     }
 
     UseDropdown(dropdownID : string | undefined, interfaceID : string | undefined) {
         if (dropdownID && interfaceID && interfaceID === this.interfaceID) {
-            this.userInput = {
-                inputID: dropdownID,
-                inputType: "dropdown"
+            this.userInteraction = {
+                interactionID: dropdownID,
+                interactionType: "input"
             };
         }
     }
@@ -180,7 +180,7 @@ export class DialogManager {
         });
 
         this.interfaceID = undefined;
-        this.userInput = undefined;
+        this.userInteraction = undefined;
     }
 
     async GetFormContents() {

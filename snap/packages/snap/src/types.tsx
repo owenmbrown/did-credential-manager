@@ -33,7 +33,7 @@ export type CredentialContents = {
     jwt: VerifiedCredential,
 }
 
-export type UserInput = {
-    inputType: "button" | "dropdown",
-    inputID: string,
+export type UserInteraction = {
+    interactionType: "button" | "input", // input is a text input or a dropdown
+    interactionID: string,
 }

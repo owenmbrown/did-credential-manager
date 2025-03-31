@@ -52,7 +52,7 @@ export async function snapCreateDID() {
             </Container>
         ); 
 
-        const buttonID = (await dialogManager.WaitForInput())?.inputID;
+        const buttonID = (await dialogManager.WaitForInteraction())?.interactionID;
 
         const approval = (buttonID === "confirm");
 
@@ -192,15 +192,15 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
         let name : string;
 
         while (true) {
-            const userInput = await dialogManager.WaitForInput();
+            const userInteraction = await dialogManager.WaitForInteraction();
             // const approval = ((await dialogManager.WaitForInput())?.inputID === "confirm");
 
             // user interacts with text box
-            if (userInput?.inputType === "dropdown") {
+            if (userInteraction?.interactionType === "input") {
                 continue;
             }
             // user hits the confirm button
-            else if (userInput?.inputType === "button" && userInput?.inputID === "confirm") {
+            else if (userInteraction?.interactionType === "button" && userInteraction?.interactionID === "confirm") {
                 // get the contents of the text box
                 const contents = await dialogManager.GetFormContents();
 
@@ -328,14 +328,14 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
                 await dialogManager.UpdatePage(pageComponent);
             }
 
-            const userInput = await dialogManager.WaitForInput();
+            const userInteraction = await dialogManager.WaitForInteraction();
             
             // user consents
-            if (userInput?.inputType === "button" && userInput?.inputID === "confirm") {
+            if (userInteraction?.interactionType === "button" && userInteraction?.interactionID === "confirm") {
                 if (chosenCredential) break;
             }
             // user chose a credential from the dropdown
-            else if (userInput?.inputType === "dropdown" && userInput?.inputID === "credential-selection-dropdown") {
+            else if (userInteraction?.interactionType === "input" && userInteraction?.interactionID === "credential-selection-dropdown") {
                 // get the contents of the dropdown
                 const contents = await dialogManager.GetFormContents();
 
@@ -499,7 +499,7 @@ export async function snapDialogTest() {
 
     while (true) {
         // wait for the user to press the button
-        const buttonID = (await dialogManager.WaitForInput())?.inputID;
+        const buttonID = (await dialogManager.WaitForInteraction())?.interactionID;
         if (buttonID !== "submit") continue;
 
         console.log(buttonID);
