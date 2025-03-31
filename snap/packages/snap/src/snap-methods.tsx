@@ -205,6 +205,7 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
                 const contents = await dialogManager.GetFormContents();
 
                 name = contents["credential-name-input"] as string;
+                credentialContents.name = name;
 
                 // break out of loop if name is valid
                 if (name.length >= 3) break;
@@ -236,8 +237,14 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
 
         // display a confirmation alert
         await dialogManager.UpdatePage(
-            <Box center={true}>
-                <Heading>Credential stored successfully</Heading>
+            <Box>
+                <Box center={true}>
+                    <Heading>
+                        Credential Stored Successfully
+                    </Heading>
+                </Box>
+                <Divider/>
+                <CredentialCard verifiableCredential={credentialContents}/>
             </Box>
         );
 
@@ -391,7 +398,7 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
             <Box>
                 <Box center={true}>
                     <Heading>
-                        Successfully presented
+                        Credential Presented Successfully
                     </Heading>
                 </Box>
                 <Divider/>
