@@ -1,4 +1,4 @@
-import { Heading, Section, SnapComponent, Text } from "@metamask/snaps-sdk/jsx";
+import { Form, Heading, Input, Section, SnapComponent, Text } from "@metamask/snaps-sdk/jsx";
 
 import { InclusiveRow, DID } from "../components";
 import { CredentialContents } from "src/types";
@@ -10,19 +10,35 @@ type CredentialCardProps = {
         issuer: string,
         subject: string,
         claimString: string,
-    }
+    },
+    doNameInputField?: boolean,
+    nameInputFieldID?: string,
+    nameInputPlaceholder?: string
+    nameInputContents?: string,
 }
 
 export const CredentialCard: SnapComponent<CredentialCardProps> = ({ 
-    verifiableCredential
+    verifiableCredential,
+    doNameInputField = false,
+    nameInputFieldID = "",
+    nameInputPlaceholder = "",
+    nameInputContents = "",
 }) => {
     return (
         <Section>
-            <Heading>
-                {
-                    verifiableCredential.name ?? "Credential"
-                }
-            </Heading>
+            {
+                doNameInputField ? 
+                    (
+                        <Input name={nameInputFieldID} placeholder={nameInputPlaceholder} value={nameInputContents}/>
+                    ) :
+                    (
+                        <Heading>
+                            {
+                                verifiableCredential.name ?? "Credential"
+                            }
+                        </Heading>
+                    )
+            }
             <InclusiveRow label="Issuer">
                 <DID did={verifiableCredential.issuer} />
             </InclusiveRow>
