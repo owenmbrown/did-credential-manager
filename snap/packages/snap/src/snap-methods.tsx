@@ -173,7 +173,13 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
             <Container>
                 <Box>
                     <Heading>Would you like to store this verifiable credential?</Heading>
-                    <CredentialCard verifiableCredential={credentialContents}/>
+                    <CredentialCard 
+                        verifiableCredential={credentialContents} 
+                        doNameInputField 
+                        nameInputContents="New Credential" 
+                        nameInputFieldID="credential-name-input" 
+                        nameInputPlaceholder="Credential Name"
+                    />
                 </Box>
                 <Footer>
                     <Button type="button" name="confirm" form="userInfoForm">
@@ -183,20 +189,39 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
             </Container>
         );
 
-        const approval = ((await dialogManager.WaitForInput())?.inputID === "confirm");
+        let name : string;
 
-        // return if user rejects prompt
-        if (approval === false) {
-            return {
-                success: false,
-                message: "user rejected dialogue"
+        while (true) {
+            const userInput = await dialogManager.WaitForInput();
+            // const approval = ((await dialogManager.WaitForInput())?.inputID === "confirm");
+
+            // user interacts with text box
+            if (userInput?.inputType === "dropdown") {
+                continue;
+            }
+            // user hits the confirm button
+            else if (userInput?.inputType === "button" && userInput?.inputID === "confirm") {
+                // get the contents of the text box
+                const contents = await dialogManager.GetFormContents();
+
+                name = contents["credential-name-input"] as string;
+
+                // break out of loop if name is valid
+                if (name.length >= 3) break;
+                // TODO: better user feedback for invalid names
+            }
+            // return if user rejects prompt
+            else {
+                return {
+                    success: false,
+                    message: "user rejected dialogue"
+                }
             }
         }
 
         // display a loading wheel
         await dialogManager.ShowLoadingPage();
 
-        const name = "temp";
         const uuid = crypto.randomUUID();
 
         // update the VC in the object
@@ -311,6 +336,7 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
             }
             // user chose a credential from the dropdown
             else if (userInput?.inputType === "dropdown" && userInput?.inputID === "credential-selection-dropdown") {
+                // get the contents of the dropdown
                 const contents = await dialogManager.GetFormContents();
 
                 chosenCredential = undefined;
