@@ -6,7 +6,7 @@ import { EthrDID } from 'ethr-did';
 import { getResolver as getEthrResolver } from 'ethr-did-resolver';
 import { Resolver } from 'did-resolver';
 
-import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt, DialogManager, getCredentialContents } from './snap-helpers';
+import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt, DialogManager, getCredentialContents, getCredentialsContentList } from './snap-helpers';
 import { StoreVCParams, GetVPParams, StorageContents, CredentialContents } from './types'
 import { DID, InclusiveRow, CredentialCard } from './components'
 
@@ -19,8 +19,14 @@ const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${INFU
 let dialogManager = new DialogManager();
 
 export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
+    console.log("event");
+    console.log(event.type);
+    console.log(event.name);
     if (event.type === UserInputEventType.ButtonClickEvent) {
-        dialogManager.PressButton(event.name,id);
+        dialogManager.UseButton(event.name,id);
+    }
+    else if (event.type === UserInputEventType.InputChangeEvent) {
+        dialogManager.UseDropdown(event.name,id);
     }
 }
 
@@ -46,7 +52,7 @@ export async function snapCreateDID() {
             </Container>
         ); 
 
-        const buttonID = await dialogManager.WaitForButton();
+        const buttonID = (await dialogManager.WaitForInput())?.inputID;
 
         const approval = (buttonID === "confirm");
 
@@ -177,7 +183,7 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
             </Container>
         );
 
-        const approval = ((await dialogManager.WaitForButton()) === "confirm");
+        const approval = ((await dialogManager.WaitForInput())?.inputID === "confirm");
 
         // return if user rejects prompt
         if (approval === false) {
@@ -256,29 +262,64 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
         // create the process to render the window
         const renderProcess = dialogManager.Render();
 
-        dialogManager.UpdatePage(
-            <Container>
-                <Box>
-                    <Heading>Would you like to present this app with a verifiable presentation?</Heading>
-                    <Text>The app can use this to verify a claim about you.</Text>
-                    <Text>This presentation will expire in 1 minute.</Text>
-                </Box>
-                <Footer>
-                    <Button type="button" name="confirm" form="userInfoForm">
-                    Confirm
-                    </Button>
-                </Footer>
-            </Container>
-        );
+        const credentials = await getCredentialsContentList(storageContents.did.credentials);
 
-        // ask user for consent
-        const approval = ((await dialogManager.WaitForButton()) === "confirm");
+        let chosenCredential : CredentialContents | undefined;
 
-        // return if user rejects prompt
-        if (approval === false) {
-            return {
-                success: false,
-                message: "user rejected dialogue"
+        while (true) {
+            dialogManager.UpdatePage(
+                <Container>
+                    <Box>
+                        <Heading>Would you like to present this app with a verifiable presentation?</Heading>
+                        <Text>The app can use this to verify a claim about you.</Text>
+                        <Text>This presentation will expire in 1 minute.</Text>
+                        <Dropdown name="credential-selection-dropdown">
+                            <Option value="none">Choose a Credential</Option>
+                            {
+                                credentials.map((item,index) => (
+                                    <Option value={item.uuid as string}>{item.name as string}</Option>
+                                ))
+                            }
+                        </Dropdown>
+                        {chosenCredential ? (
+                            <CredentialCard verifiableCredential={chosenCredential}/>
+                        ) : null }
+                    </Box>
+                    <Footer>
+                        <Button type="button" name="confirm" form="userInfoForm">
+                        Confirm
+                        </Button>
+                    </Footer>
+                </Container>
+            );
+
+            const userInput = await dialogManager.WaitForInput();
+            
+            // user consents
+            if (userInput?.inputType === "button" && userInput?.inputID === "button") {
+                break;
+            }
+            // user chose a credential from the dropdown
+            else if (userInput?.inputType === "dropdown" && userInput?.inputID === "credential-selection-dropdown") {
+                const contents = await dialogManager.GetFormContents();
+
+                chosenCredential = undefined;
+
+                if (contents["credential-selection-dropdown"] !== "none") {
+                    for (let i = 0; i < credentials.length; i++) {
+                        if (credentials[i]?.uuid === contents["credential-selection-dropdown"]) {
+                            chosenCredential = credentials[i];
+                            break;
+                        }
+                    }
+                }
+            }
+            // return if user rejects prompt
+            else {
+                return {
+                    success: false,
+                    message: "user rejected dialogue"
+                }
             }
         }
 
@@ -355,18 +396,7 @@ export async function snapManageVCs() {
         // create the process to render the window
         const renderProcess = dialogManager.Render();
 
-        const credentials = new Array<CredentialContents>();
-        for (let i = 0; i < storageContents.did.credentials.length; i++) {
-            const credential = storageContents.did.credentials[i];
-
-            if (!credential) break;
-
-            const credentialContents = await getCredentialContents(credential.vc);
-            credentialContents.name = credential.name;
-            credentialContents.uuid = credential.uuid;
-
-            credentials.push(credentialContents);
-        }
+        const credentials = await getCredentialsContentList(storageContents.did.credentials);
 
         dialogManager.UpdatePage(
             <Box center={true}>
@@ -377,6 +407,12 @@ export async function snapManageVCs() {
                         <CredentialCard verifiableCredential={item} />
                     )) : (<Text>You have no credentials stored right now</Text>)
                 }
+                <Button name="interactive-button">Click me</Button>
+                <Dropdown name="interactive-dropdown">
+                    <Option value="option 1">1st option</Option>
+                    <Option value="option 2">2nd option</Option>
+                    <Option value="option 3">3rd option</Option>
+                </Dropdown>
             </Box>
         );
 
@@ -422,14 +458,19 @@ export async function snapDialogTest() {
     
     console.log("hi 3");
 
-    // wait for the user to press the button
-    const buttonID = await dialogManager.WaitForButton();
+    while (true) {
+        // wait for the user to press the button
+        const buttonID = (await dialogManager.WaitForInput())?.inputID;
+        if (buttonID !== "submit") continue;
 
-    console.log(buttonID);
+        console.log(buttonID);
 
-    // get the contents of the form
-    const contents = await dialogManager.GetFormContents();
-    console.log(contents);
+        // get the contents of the form
+        const contents = await dialogManager.GetFormContents();
+        console.log(contents);
+
+        break;
+    }
 
     // wait for the user to close the dialog
     await renderProcess;

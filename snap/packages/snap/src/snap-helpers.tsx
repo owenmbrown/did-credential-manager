@@ -4,7 +4,7 @@ import { getResolver as getEthrResolver } from 'ethr-did-resolver';
 import { Resolver } from 'did-resolver';
 import { verifyCredential } from 'did-jwt-vc';
 
-import { StoreVCParams, GetVPParams, StorageContents, CredentialContents } from './types';
+import { StoreVCParams, GetVPParams, StorageContents, CredentialContents, Credential, UserInput } from './types';
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
@@ -77,30 +77,53 @@ export async function getCredentialContents(vc: string) : Promise<CredentialCont
     }
 }
 
+export async function getCredentialsContentList(storedCredentials : Credential[]) {
+    const credentials = new Array<CredentialContents>();
+
+    for (let i = 0; i < storedCredentials.length; i++) {
+        const credential = storedCredentials[i];
+
+        if (!credential) break;
+
+        const credentialContents = await getCredentialContents(credential.vc);
+        credentialContents.name = credential.name;
+        credentialContents.uuid = credential.uuid;
+
+        credentials.push(credentialContents);
+    }
+
+    return credentials;
+}
+
 
 export class DialogManager {
     private interfaceID: string | undefined;
-    private buttonID: string | undefined;
+    private userInput: UserInput | undefined;
 
-    async WaitForButton() {
-        const oldButton    = this.buttonID;
-        const oldInterface = this.interfaceID;
+    async WaitForInput() {
+        try {
+            const oldInput    = this.userInput;
+            const oldInterface = this.interfaceID;
 
-        await new Promise<void>((resolve, reject) => {        
-            const checkInterval = setInterval(() => {
-                const currentButton = this.buttonID;
-                const currentInterface = this.interfaceID;
-                
-                if (!(currentButton === oldButton) || !(currentInterface === oldInterface) || !currentInterface) {
-                    clearInterval(checkInterval);
-                    resolve();
-                }
-            }, 100);
-        });
+            await new Promise<void>((resolve, reject) => {        
+                const checkInterval = setInterval(() => {
+                    const currentInput = this.userInput;
+                    const currentInterface = this.interfaceID;
+                    
+                    if (!(currentInput === oldInput) || !(currentInterface === oldInterface) || !currentInterface) {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 100);
+            });
 
-        if (!(this.interfaceID === oldInterface) || !this.interfaceID) return undefined;
+            if (!(this.interfaceID === oldInterface) || !this.interfaceID) return undefined;
 
-        return this.buttonID;
+            return this.userInput;
+        }
+        finally {
+            this.userInput = undefined;
+        }
     }
     async WaitForDialogClose() {
         await new Promise<void>((resolve, reject) => {        
@@ -115,12 +138,21 @@ export class DialogManager {
         return;
     }
 
-    PressButton(buttonID : string | undefined, interfaceID : string | undefined) {
-        console.log("press button")
-        console.log(`b: ${this.buttonID} : ${buttonID}`)
-        console.log(`id: ${this.interfaceID} : ${interfaceID}`)
+    UseButton(buttonID : string | undefined, interfaceID : string | undefined) {
         if (buttonID && interfaceID && interfaceID === this.interfaceID) {
-            this.buttonID = buttonID;
+            this.userInput = {
+                inputID: buttonID,
+                inputType: "button"
+            };
+        }
+    }
+
+    UseDropdown(dropdownID : string | undefined, interfaceID : string | undefined) {
+        if (dropdownID && interfaceID && interfaceID === this.interfaceID) {
+            this.userInput = {
+                inputID: dropdownID,
+                inputType: "dropdown"
+            };
         }
     }
     
@@ -148,7 +180,7 @@ export class DialogManager {
         });
 
         this.interfaceID = undefined;
-        this.buttonID = undefined;
+        this.userInput = undefined;
     }
 
     async GetFormContents() {

@@ -32,3 +32,8 @@ export type CredentialContents = {
     claimString: string,
     jwt: VerifiedCredential,
 }
+
+export type UserInput = {
+    inputType: "button" | "dropdown",
+    inputID: string,
+}
