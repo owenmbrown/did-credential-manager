@@ -1,7 +1,8 @@
-import { Button, Form, Heading, Input, Section, SnapComponent, Text } from "@metamask/snaps-sdk/jsx";
+import { Box, Button, Divider, Form, Heading, Input, Section, SnapComponent, Text } from "@metamask/snaps-sdk/jsx";
 
 import { InclusiveRow, DID } from "../components";
 import { CredentialContents } from "src/types";
+import { TripleRow } from "./TripleRow";
 
 type CredentialCardProps = {
     verifiableCredential: {
@@ -15,8 +16,10 @@ type CredentialCardProps = {
     nameInputFieldID?: string,
     nameInputPlaceholder?: string
     nameInputContents?: string,
-    doEditButton?: boolean,
-    editButtonId?: string,
+    doButtonRow?: boolean
+    buttonRowComponent1?: any
+    buttonRowComponent2?: any
+    buttonRowComponent3?: any
 }
 
 export const CredentialCard: SnapComponent<CredentialCardProps> = ({ 
@@ -25,8 +28,10 @@ export const CredentialCard: SnapComponent<CredentialCardProps> = ({
     nameInputFieldID = "",
     nameInputPlaceholder = "",
     nameInputContents = "",
-    doEditButton = false,
-    editButtonId = ""
+    doButtonRow = false,
+    buttonRowComponent1 = null,
+    buttonRowComponent2 = null,
+    buttonRowComponent3 = null
 
 }) => {
     return (
@@ -54,11 +59,15 @@ export const CredentialCard: SnapComponent<CredentialCardProps> = ({
                 <Text>{verifiableCredential.claimString}</Text>
             </InclusiveRow>
             {
-                doEditButton ? (
-                    <InclusiveRow label="">
-                        <Button name={editButtonId}>Edit</Button>
-                    </InclusiveRow>
-                ) : null
+                doButtonRow ? (
+                    <Box>
+                        <Divider/>
+                        <TripleRow 
+                            item1={buttonRowComponent1}
+                            item2={buttonRowComponent2}
+                            item3={buttonRowComponent3}
+                            /> 
+                    </Box>) : null
             }
         </Section>
     );

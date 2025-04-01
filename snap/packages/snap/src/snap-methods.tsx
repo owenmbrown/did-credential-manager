@@ -462,12 +462,24 @@ export async function snapManageVCs() {
                                         nameInputContents={item.name as string} 
                                         nameInputFieldID="credential-name-input" 
                                         nameInputPlaceholder="New Credential Name"
+                                        doButtonRow
+                                        buttonRowComponent1={(
+                                            <Button name={`cancel-${item.uuid}`}>Cancel</Button>
+                                        )}
+                                        buttonRowComponent2={(
+                                            <Button name={`delete-${item.uuid}`} variant='destructive'>Delete</Button>
+                                        )}
+                                        buttonRowComponent3={(
+                                            <Button name={`done-${item.uuid}`}>Done</Button>
+                                        )}
                                     />
                                     : 
                                     <CredentialCard
                                         verifiableCredential={item}
-                                        doEditButton={true}
-                                        editButtonId={`edit-${item.uuid}`}
+                                        doButtonRow
+                                        buttonRowComponent3={(
+                                            <Button name={`edit-${item.uuid}`}>Edit</Button>
+                                        )}
                                     />
                         )) : (<Text>You have no credentials stored right now</Text>)
                     }
