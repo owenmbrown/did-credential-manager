@@ -17,9 +17,9 @@ type CredentialCardProps = {
     nameInputPlaceholder?: string
     nameInputContents?: string,
     doButtonRow?: boolean
-    buttonRowComponent1?: any
-    buttonRowComponent2?: any
-    buttonRowComponent3?: any
+    buttonRowLeft?: any
+    buttonRowMiddle?: any
+    buttonRowRight?: any
 }
 
 export const CredentialCard: SnapComponent<CredentialCardProps> = ({ 
@@ -29,9 +29,9 @@ export const CredentialCard: SnapComponent<CredentialCardProps> = ({
     nameInputPlaceholder = "",
     nameInputContents = "",
     doButtonRow = false,
-    buttonRowComponent1 = null,
-    buttonRowComponent2 = null,
-    buttonRowComponent3 = null
+    buttonRowLeft = null,
+    buttonRowMiddle = null,
+    buttonRowRight = null
 
 }) => {
     return (
@@ -63,9 +63,9 @@ export const CredentialCard: SnapComponent<CredentialCardProps> = ({
                     <Box>
                         <Divider/>
                         <TripleRow 
-                            item1={buttonRowComponent1}
-                            item2={buttonRowComponent2}
-                            item3={buttonRowComponent3}
+                            left={buttonRowLeft}
+                            middle={buttonRowMiddle}
+                            right={buttonRowRight}
                             /> 
                     </Box>) : null
             }

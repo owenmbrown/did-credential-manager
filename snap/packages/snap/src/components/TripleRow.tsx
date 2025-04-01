@@ -7,27 +7,27 @@ type TripleRowProps = {
     // // the content to display on the right side of the row
     // children: any;
 
-    item1: any;
-    item2: any;
-    item3: any;
+    left: any;
+    middle: any;
+    right: any;
   };
   
 // a custom row component that mimics the MetaMask Row component, but allows any content
 export const TripleRow: SnapComponent<TripleRowProps> = ({ 
-    item1,
-    item2,
-    item3
+    left,
+    middle,
+    right
 }) => {
     return (
         <Box direction="horizontal" alignment="space-between">
             <Box>
-                {item1}
+                {left}
             </Box>
             <Box>
-                {item2}
+                {middle}
             </Box>
             <Box>
-                {item3}
+                {right}
             </Box>
         </Box>
     );

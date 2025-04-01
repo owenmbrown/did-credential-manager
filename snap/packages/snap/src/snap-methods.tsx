@@ -463,13 +463,13 @@ export async function snapManageVCs() {
                                         nameInputFieldID="credential-name-input" 
                                         nameInputPlaceholder="New Credential Name"
                                         doButtonRow
-                                        buttonRowComponent1={(
+                                        buttonRowLeft={(
                                             <Button name={`cancel-${item.uuid}`}>Cancel</Button>
                                         )}
-                                        buttonRowComponent2={(
+                                        buttonRowMiddle={(
                                             <Button name={`delete-${item.uuid}`} variant='destructive'>Delete</Button>
                                         )}
-                                        buttonRowComponent3={(
+                                        buttonRowRight={(
                                             <Button name={`done-${item.uuid}`}>Done</Button>
                                         )}
                                     />
@@ -477,7 +477,7 @@ export async function snapManageVCs() {
                                     <CredentialCard
                                         verifiableCredential={item}
                                         doButtonRow
-                                        buttonRowComponent3={(
+                                        buttonRowRight={(
                                             <Button name={`edit-${item.uuid}`}>Edit</Button>
                                         )}
                                     />
