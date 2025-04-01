@@ -19,9 +19,9 @@ const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${INFU
 let dialogManager = new DialogManager();
 
 export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
-    console.log("event");
-    console.log(event.type);
-    console.log(event.name);
+    // console.log("event");
+    // console.log(event.type);
+    // console.log(event.name);
     if (event.type === UserInputEventType.ButtonClickEvent) {
         dialogManager.UseButton(event.name,id);
     }
@@ -442,56 +442,140 @@ export async function snapManageVCs() {
         // create the process to render the window
         const renderProcess = dialogManager.Render();
 
+        // note: we use a list instead of a dictionary since its easier handle
+        //       the overhead of having to loop through the list to find an element doesn't matter
+        //       since users will usually only store 1-5 credentials 
         const credentials = await getCredentialsContentList(storageContents.did.credentials);
 
-        let selectedCredentialID : string | null | undefined;
+        let editingCredentialID : string | null | undefined;
+
+        let reRender = true;
 
         while (true) {
-            dialogManager.UpdatePage(
-                <Box>
-                    <Box center={true}>
-                        <Heading>Credentials</Heading>
-                    </Box>
-                    <Divider />
-                    {
-                        credentials.length > 0 ? credentials.map((item,index) => (
-                                selectedCredentialID === item.uuid ?
-                                    <CredentialCard
-                                        verifiableCredential={item}
-                                        doNameInputField 
-                                        nameInputContents={item.name as string} 
-                                        nameInputFieldID="credential-name-input" 
-                                        nameInputPlaceholder="New Credential Name"
-                                        doButtonRow
-                                        buttonRowLeft={(
-                                            <Button name={`cancel-${item.uuid}`}>Cancel</Button>
-                                        )}
-                                        buttonRowMiddle={(
-                                            <Button name={`delete-${item.uuid}`} variant='destructive'>Delete</Button>
-                                        )}
-                                        buttonRowRight={(
-                                            <Button name={`done-${item.uuid}`}>Done</Button>
-                                        )}
-                                    />
-                                    : 
-                                    <CredentialCard
-                                        verifiableCredential={item}
-                                        doButtonRow
-                                        buttonRowRight={(
-                                            <Button name={`edit-${item.uuid}`}>Edit</Button>
-                                        )}
-                                    />
-                        )) : (<Text>You have no credentials stored right now</Text>)
-                    }
-                </Box>
-            );
+            if (reRender) {
+                dialogManager.UpdatePage(
+                    <Container>
+                        <Box>
+                            <Box center={true}>
+                                <Heading>Credentials</Heading>
+                            </Box>
+                            <Divider />
+                            {
+                                credentials.length > 0 ? credentials.map((item,index) => (
+                                    editingCredentialID === item.uuid ?
+                                        <CredentialCard
+                                            verifiableCredential={item}
+                                            doNameInputField 
+                                            nameInputContents={item.name as string} 
+                                            nameInputFieldID={`credential-name-input-${item.uuid}`}
+                                            nameInputPlaceholder="New Credential Name"
+                                            doButtonRow
+                                            buttonRowLeft={(
+                                                <Button name={`cancel-${item.uuid}`}>Cancel</Button>
+                                            )}
+                                            buttonRowMiddle={(
+                                                <Button name={`delete-${item.uuid}`} variant='destructive'>Delete</Button>
+                                            )}
+                                            buttonRowRight={(
+                                                <Button name={`done-${item.uuid}`}>Done</Button>
+                                            )}
+                                        />
+                                        : 
+                                        <CredentialCard
+                                            verifiableCredential={item}
+                                            doButtonRow
+                                            buttonRowRight={(
+                                                <Button name={`edit-${item.uuid}`}>Edit</Button>
+                                            )}
+                                        />
+                                )) : (<Text>You have no credentials stored right now</Text>)
+                            }
+                        </Box>
+                        <Footer>
+                            <Button type="button" name="confirm" form="userInfoForm">
+                            Save
+                            </Button>
+                        </Footer>
+                    </Container>
+                );
+            }
+
+            reRender = true;
 
             // wait for user interaction
             const userInteraction = await dialogManager.WaitForInteraction();
             
             // user selects a credential to edit
             if (userInteraction?.interactionType === "button" && userInteraction?.interactionID.startsWith("edit")) {
-                selectedCredentialID = userInteraction?.interactionID.replace("edit-","")
+                const selectedCredentialID = userInteraction?.interactionID.replace("edit-","");
+
+                console.log("Start editing");
+
+                // select the credential to open the editing panel
+                editingCredentialID = selectedCredentialID;
+            }
+            // user wants to cancel their edit
+            else if (userInteraction?.interactionType === "button" && userInteraction?.interactionID.startsWith("cancel")) {
+                const selectedCredentialID = userInteraction?.interactionID.replace("cancel-","");
+
+                console.log("Cancel editing");
+                
+                // deselect the credential, to close editing panel
+                editingCredentialID = null;
+            }
+            // user wants to delete the credential
+            else if (userInteraction?.interactionType === "button" && userInteraction?.interactionID.startsWith("delete")) {
+                const selectedCredentialID = userInteraction?.interactionID.replace("delete-","");
+
+                console.log("Delete credential");
+
+                // deselect the credential, to close editing panel
+                editingCredentialID = null;
+            }
+            // user wants to finish editing
+            else if (userInteraction?.interactionType === "button" && userInteraction?.interactionID.startsWith("done")) {
+                const selectedCredentialID = userInteraction?.interactionID.replace("done-","");
+
+                console.log("Done editing credential");
+
+                // get the contents of the text box
+                const contents = await dialogManager.GetFormContents();
+
+                const name = contents[`credential-name-input-${selectedCredentialID}`] as string;
+
+                // close the editing panel if name is valid
+                if (name.length >= 3) {
+                    for (let i = 0; i < credentials.length; i++) {
+                        const credential = credentials[i];
+                        if (!credential) break;
+                        
+                        if (credential.uuid === selectedCredentialID) {
+                            credential.name = name;
+
+                            credentials[i] = credential;
+
+                            break;
+                        }
+                    }
+
+                    // deselect the credential, to close editing panel
+                    editingCredentialID = null;
+                };
+                // TODO: better user feedback for invalid names
+            }
+            else if (userInteraction?.interactionType === "button" && userInteraction?.interactionID.startsWith("recover")) {
+                const selectedCredentialID = userInteraction?.interactionID.replace("recover-","");
+
+                console.log("Recover credential");
+                // TODO revert credential to how it was
+            }
+            // user saves the changes
+            else if (userInteraction?.interactionType === "button" && userInteraction?.interactionID === "confirm") {
+                break;
+            }
+            else if (userInteraction?.interactionType === "input") {
+                // don't need to rerender if the text box is uses
+                reRender = false;
             }
             // return if user rejects prompt
             else {
@@ -501,6 +585,16 @@ export async function snapManageVCs() {
                 }
             }
         }
+
+        // TODO: save changes
+        
+        await dialogManager.UpdatePage(
+            <Box center={true}>
+                <Heading>
+                    Changes Saved
+                </Heading>
+            </Box>
+        );
 
         // wait for the user to close the dialog
         await renderProcess;
