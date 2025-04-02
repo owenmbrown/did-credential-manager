@@ -187,7 +187,7 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
                         verifiableCredential={credentialContents} 
                         doCustomHeader 
                         customHeader={
-                            <Input name={'credential-name-input-'} placeholder={"Credential Name"} value={credentialName}/>
+                            <Input name={'credential-name-input'} placeholder={"Credential Name"} value={credentialName}/>
                         }
                     />
                 </Box>
@@ -694,7 +694,23 @@ export async function snapManageVCs() {
             }
         }
 
-        // TODO: save changes
+        // save changes
+        let updatedCredentials = [];
+        for (let i = 0; i < credentials.length; i++) {
+            const credentialContents = credentials[i];
+            if (!credentialContents) continue;
+
+            if (credentialContents.deleted) continue;
+
+            const credential = storageContents.did.credentials[i];
+            if (!credential) continue;
+
+            credential.name = credentialContents.name as string;
+            updatedCredentials.push(credential);
+        }
+
+        storageContents.did.credentials = updatedCredentials;
+        await setSnapStorage(storageContents);
         
         await dialogManager.UpdatePage(
             <Box center={true}>
