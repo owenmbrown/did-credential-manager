@@ -89,7 +89,8 @@ export async function getCredentialsContentList(storedCredentials : Credential[]
         credentialContents.name = credential.name;
         credentialContents.uuid = credential.uuid;
         credentialContents.type = credential.type;
-
+        credentialContents.oldName = credential.name;
+        
         credentials.push(credentialContents);
     }
 

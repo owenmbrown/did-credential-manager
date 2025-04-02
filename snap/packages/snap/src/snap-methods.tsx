@@ -9,6 +9,7 @@ import { Resolver } from 'did-resolver';
 import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt, DialogManager, getCredentialContents, getCredentialsContentList } from './snap-helpers';
 import { StoreVCParams, GetVPParams, StorageContents, CredentialContents } from './types'
 import { DID, InclusiveRow, CredentialCard } from './components'
+import { TripleRow } from './components/TripleRow';
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
@@ -184,10 +185,10 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
                     <Heading>Would you like to store this verifiable credential?</Heading>
                     <CredentialCard 
                         verifiableCredential={credentialContents} 
-                        doNameInputField 
-                        nameInputContents="New Credential" 
-                        nameInputFieldID="credential-name-input" 
-                        nameInputPlaceholder="Credential Name"
+                        doCustomHeader 
+                        customHeader={
+                            <Input name={'credential-name-input-'} placeholder={"Credential Name"} value={credentialName}/>
+                        }
                     />
                 </Box>
                 <Footer>
@@ -211,7 +212,7 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
                 // get the contents of the text box
                 const contents = await dialogManager.GetFormContents();
 
-                credentialName = contents["credential-name-input"] as string;
+                credentialName = (contents["credential-name-input"] ?? credentialName) as string;
                 credentialContents.name = credentialName;
 
                 // break out of loop if name is valid
@@ -500,31 +501,71 @@ export async function snapManageVCs() {
                             {
                                 credentials.length > 0 ? credentials.map((item,index) => (
                                     editingCredentialID === item.uuid ?
-                                        <CredentialCard
-                                            verifiableCredential={item}
-                                            doNameInputField 
-                                            nameInputContents={item.name as string} 
-                                            nameInputFieldID={`credential-name-input-${item.uuid}`}
-                                            nameInputPlaceholder="New Credential Name"
-                                            doButtonRow
-                                            buttonRowLeft={(
-                                                <Button name={`cancel-${item.uuid}`}>Cancel</Button>
-                                            )}
-                                            buttonRowMiddle={(
-                                                <Button name={`delete-${item.uuid}`} variant='destructive'>Delete</Button>
-                                            )}
-                                            buttonRowRight={(
-                                                <Button name={`done-${item.uuid}`}>Done</Button>
-                                            )}
-                                        />
-                                        : 
-                                        <CredentialCard
-                                            verifiableCredential={item}
-                                            doButtonRow
-                                            buttonRowRight={(
-                                                <Button name={`edit-${item.uuid}`}>Edit</Button>
-                                            )}
-                                        />
+                                    <CredentialCard // card that is currently being edited
+                                        verifiableCredential={item}
+                                        doCustomHeader
+                                        customHeader={
+                                            <Input name={`credential-name-input-${item.uuid}`} placeholder={"New Credential Name"} value={item.name as string}/>
+                                        }
+                                        doButtonRow
+                                        buttonRowLeft={(
+                                            <Button name={`cancel-${item.uuid}`}>Cancel</Button>
+                                        )}
+                                        buttonRowMiddle={(
+                                            <Button name={`delete-${item.uuid}`} variant='destructive'>Delete</Button>
+                                        )}
+                                        buttonRowRight={(
+                                            <Button name={`done-${item.uuid}`}>Done</Button>
+                                        )}
+                                    />
+                                    : item.deleted ?
+                                    <CredentialCard // deleted card with recover button
+                                        verifiableCredential={item}
+                                        doButtonRow
+                                        doCustomHeader
+                                        customHeader={
+                                            <TripleRow 
+                                                left={
+                                                    <Text color="error"><Bold>{item.name as string}</Bold></Text>
+                                                } 
+                                                middle={null} 
+                                                right={
+                                                    <Text color="error"><Italic>deleted</Italic></Text>
+                                                }
+                                            />
+                                        }
+                                        buttonRowRight={(
+                                            <Button name={`recover-${item.uuid}`}>Recover</Button>
+                                        )}
+                                    />
+                                    : item.edited ?
+                                    <CredentialCard // deleted card with recover button
+                                        verifiableCredential={item}
+                                        doButtonRow
+                                        doCustomHeader
+                                        customHeader={
+                                            <TripleRow 
+                                                left={
+                                                    <Text color="alternative"><Italic>{item.name as string}</Italic></Text>
+                                                } 
+                                                middle={null} 
+                                                right={
+                                                    <Text color="alternative"><Italic>edited</Italic></Text>
+                                                }
+                                            />
+                                        }
+                                        buttonRowRight={(
+                                            <Button name={`recover-${item.uuid}`}>Restore</Button>
+                                        )}
+                                    />
+                                    :
+                                    <CredentialCard // default card with edit button
+                                        verifiableCredential={item}
+                                        doButtonRow
+                                        buttonRowRight={(
+                                            <Button name={`edit-${item.uuid}`}>Edit</Button>
+                                        )}
+                                    />
                                 )) : (<Text>You have no credentials stored right now</Text>)
                             }
                         </Box>
@@ -566,6 +607,20 @@ export async function snapManageVCs() {
 
                 console.log("Delete credential");
 
+                // set the 'deleted' flag in the credential
+                for (let i = 0; i < credentials.length; i++) {
+                    const credential = credentials[i];
+                    if (!credential) break;
+                    
+                    if (credential.uuid === selectedCredentialID) {
+                        credential.deleted = true;
+
+                        credentials[i] = credential;
+
+                        break;
+                    }
+                }
+
                 // deselect the credential, to close editing panel
                 editingCredentialID = null;
             }
@@ -588,6 +643,7 @@ export async function snapManageVCs() {
                         
                         if (credential.uuid === selectedCredentialID) {
                             credential.name = name;
+                            credential.edited = true;
 
                             credentials[i] = credential;
 
@@ -604,14 +660,29 @@ export async function snapManageVCs() {
                 const selectedCredentialID = userInteraction?.interactionID.replace("recover-","");
 
                 console.log("Recover credential");
-                // TODO revert credential to how it was
+                
+                // set the 'deleted' flag in the credential
+                for (let i = 0; i < credentials.length; i++) {
+                    const credential = credentials[i];
+                    if (!credential) break;
+                    
+                    if (credential.uuid === selectedCredentialID) {
+                        credential.deleted = false;
+                        credential.edited = false;
+                        credential.name = credential.oldName as string;
+
+                        credentials[i] = credential;
+
+                        break;
+                    }
+                }
             }
             // user saves the changes
             else if (userInteraction?.interactionType === "button" && userInteraction?.interactionID === "confirm") {
                 break;
             }
             else if (userInteraction?.interactionType === "input") {
-                // don't need to rerender if the text box is uses
+                // don't need to rerender if the text box is used
                 reRender = false;
             }
             // return if user rejects prompt

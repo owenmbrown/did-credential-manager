@@ -30,12 +30,15 @@ export type CredentialContents = {
     vc: string,
     name?: string | null,
     uuid?: string | null,
-    type?: string
+    type?: string,
     issuer: string,
     subject: string,
     claim: object,
     claimString: string,
     jwt: VerifiedCredential,
+    deleted?: boolean,
+    edited?: boolean,
+    oldName?: string
 }
 
 export type UserInteraction = {

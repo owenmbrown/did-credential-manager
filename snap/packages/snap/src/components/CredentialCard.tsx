@@ -1,4 +1,4 @@
-import { Box, Button, Divider, Form, Heading, Input, Section, SnapComponent, Text } from "@metamask/snaps-sdk/jsx";
+import { Bold, Box, Button, Divider, Form, Heading, Input, Section, SnapComponent, Text } from "@metamask/snaps-sdk/jsx";
 
 import { InclusiveRow, DID } from "../components";
 import { CredentialContents } from "src/types";
@@ -12,10 +12,12 @@ type CredentialCardProps = {
         subject: string,
         claimString: string,
     },
-    doNameInputField?: boolean,
-    nameInputFieldID?: string,
-    nameInputPlaceholder?: string
-    nameInputContents?: string,
+    // doNameInputField?: boolean,
+    // nameInputFieldID?: string,
+    // nameInputPlaceholder?: string
+    // nameInputContents?: string,
+    doCustomHeader?: boolean,
+    customHeader?: any,
     doButtonRow?: boolean
     buttonRowLeft?: any
     buttonRowMiddle?: any
@@ -24,23 +26,22 @@ type CredentialCardProps = {
 
 export const CredentialCard: SnapComponent<CredentialCardProps> = ({ 
     verifiableCredential,
-    doNameInputField = false,
-    nameInputFieldID = "",
-    nameInputPlaceholder = "",
-    nameInputContents = "",
+    // doNameInputField = false,
+    // nameInputFieldID = "",
+    // nameInputPlaceholder = "",
+    // nameInputContents = "",
+    doCustomHeader = false,
+    customHeader = null,
     doButtonRow = false,
     buttonRowLeft = null,
     buttonRowMiddle = null,
-    buttonRowRight = null
-
+    buttonRowRight = null,
 }) => {
     return (
         <Section>
             {
-                doNameInputField ? 
-                    (
-                        <Input name={nameInputFieldID} placeholder={nameInputPlaceholder} value={nameInputContents}/>
-                    ) :
+                doCustomHeader ? 
+                    (customHeader) :
                     (
                         <Heading>
                             {
@@ -49,6 +50,7 @@ export const CredentialCard: SnapComponent<CredentialCardProps> = ({
                         </Heading>
                     )
             }
+            <Divider/>
             <InclusiveRow label="Issuer">
                 <DID did={verifiableCredential.issuer} />
             </InclusiveRow>
