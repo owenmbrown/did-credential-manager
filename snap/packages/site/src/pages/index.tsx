@@ -148,6 +148,22 @@ const Index = () => {
 
     console.log(result);
   };
+  
+  const handleSendExportIdentity = async () => {
+    const result = await invokeSnap({
+      method: 'export-identity',
+    });
+  
+    console.log(result);
+  }
+
+  const handleSendImportIdentity = async () => {
+    const result = await invokeSnap({
+      method: 'import-identity',
+    });
+  
+    console.log(result);
+  }
 
   return (
     <Container>
@@ -316,6 +332,46 @@ const Index = () => {
                 onClick={handleSendManageVCs}
                 disabled={!installedSnap}
                 ButtonText="Manage"
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Export Identity',
+            description:
+              'Export your identity to import to another instance of your wallet',
+            button: (
+              <SendHelloButton
+                onClick={handleSendExportIdentity}
+                disabled={!installedSnap}
+                ButtonText="Export"
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Import Identity',
+            description:
+              'Import your identity from another instance of your wallet',
+            button: (
+              <SendHelloButton
+                onClick={handleSendImportIdentity}
+                disabled={!installedSnap}
+                ButtonText="Import"
               />
             ),
           }}

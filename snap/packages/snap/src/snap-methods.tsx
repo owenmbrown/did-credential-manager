@@ -1,4 +1,4 @@
-import { Box, Text, Bold, Heading, Form, Field, Input, Dropdown, Option, Radio, RadioGroup, Checkbox, Selector, SelectorOption, Card, Button, Footer, Container, Row, Address, Copyable, Divider, Section, Nestable, GenericSnapElement, Spinner } from '@metamask/snaps-sdk/jsx';
+import { Box, Text, Bold, Heading, Form, Field, Input, Dropdown, Option, Radio, RadioGroup, Checkbox, Selector, SelectorOption, Card, Button, Footer, Container, Row, Address, Copyable, Divider, Section, Nestable, GenericSnapElement, Spinner, Italic } from '@metamask/snaps-sdk/jsx';
 import { ComponentOrElement, JsonRpcParams, JsonRpcRequest, OnUserInputHandler, UserInputEventType } from '@metamask/snaps-sdk';
 import { ethers } from 'ethers';
 import { createVerifiablePresentationJwt, Issuer, JwtPresentationPayload, verifyCredential } from 'did-jwt-vc';
@@ -609,5 +609,55 @@ export async function snapManageVCs() {
             success: false,
             message: "runtime error",
         }
+    }
+}
+
+export async function snapExportIdentity() {
+    // create a new dialog window
+    await dialogManager.NewDialog();
+    
+    // create the process to render the window
+    const renderProcess = dialogManager.Render();
+
+    await dialogManager.UpdatePage(
+        <Box center={true}>
+            <Heading>
+                Export Identity
+            </Heading>
+            <Divider/>
+            <Text><Italic>Unfinished method</Italic></Text>
+        </Box>
+    );
+
+    // wait for the user to close the dialog
+    await renderProcess;
+
+    return {
+        success: true,
+    }
+}
+
+export async function snapImportIdentity() {
+    // create a new dialog window
+    await dialogManager.NewDialog();
+    
+    // create the process to render the window
+    const renderProcess = dialogManager.Render();
+
+    await dialogManager.UpdatePage(
+        <Box center={true}>
+            <Heading>
+                Import Identity
+            </Heading>
+            <Divider/>
+            <Text><Italic>Unfinished method</Italic></Text>
+        </Box>
+    );
+
+    // wait for the user to close the dialog
+    await renderProcess;
+
+    return {
+        success: true,
     }
 }
