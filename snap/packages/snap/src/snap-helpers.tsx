@@ -58,7 +58,7 @@ export async function displayPrompt(content : ComponentOrElement) : Promise<stri
 }
 
 
-export async function getCredentialContents(vc: string) : Promise<CredentialContents> {
+export async function getCredentialContents(vc : string) : Promise<CredentialContents> {
     // initialize did:ethr resolver
     const resolver = new Resolver({
         ...getEthrResolver({ infuraProjectId: INFURA_PROJECT_ID }),
@@ -88,6 +88,7 @@ export async function getCredentialsContentList(storedCredentials : Credential[]
         const credentialContents = await getCredentialContents(credential.vc);
         credentialContents.name = credential.name;
         credentialContents.uuid = credential.uuid;
+        credentialContents.type = credential.type;
 
         credentials.push(credentialContents);
     }

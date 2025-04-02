@@ -136,6 +136,15 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
         // get the parans passed by the dapp
         const params = request.params as StoreVCParams;
         const vc = params.vc;
+        const credentialType = params.type;
+        let credentialName = params.defaultName;
+
+        if (!vc || !credentialType || !credentialName) {
+            return {
+                success: false,
+                message: `missing params: [ ${!vc ? 'vc ' : ''}${!credentialType ? 'type ' : ''}${!credentialName ? 'defaultName ' : ''}]`
+            }
+        }
 
         // get current state of snap secure storage
         const storageContents = await getSnapStorage();
@@ -189,8 +198,6 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
             </Container>
         );
 
-        let name : string;
-
         while (true) {
             const userInteraction = await dialogManager.WaitForInteraction();
             // const approval = ((await dialogManager.WaitForInput())?.inputID === "confirm");
@@ -204,11 +211,11 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
                 // get the contents of the text box
                 const contents = await dialogManager.GetFormContents();
 
-                name = contents["credential-name-input"] as string;
-                credentialContents.name = name;
+                credentialName = contents["credential-name-input"] as string;
+                credentialContents.name = credentialName;
 
                 // break out of loop if name is valid
-                if (name.length >= 3) break;
+                if (credentialName.length >= 3) break;
                 // TODO: better user feedback for invalid names
             }
             // return if user rejects prompt
@@ -227,9 +234,10 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
 
         // update the VC in the object
         storageContents.did.credentials.push({
-            name,
+            name: credentialName,
             uuid,
             vc,
+            type: credentialType
         });
         
         // store the VC in secure storage
@@ -269,11 +277,12 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
         // read the paramaters of the rpc request to get the challenge
         const params = request.params as GetVPParams;
         const challenge = params.challenge;
-        // check if the challenge was actually set
-        if (!challenge) {
+        const validTypes = params.validTypes
+        // check if the paramaters were set
+        if (!challenge || ! validTypes) {
             return {
                 success: false,
-                message: "missing challenge"
+                message:  `missing params: [ ${!challenge ? 'challenge ' : ''}${!validTypes ? 'validTypes ' : ''}]`
             }
         }
         
@@ -281,10 +290,21 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
         const storageContents = await getSnapStorage();
         
         // verify data is formatted correctly
-        if (!storageContents /*|| storageContents.did.vc == ""*/) {
+        if (!storageContents) {
             return {
                 success: false,
-                message: "no vc is stored"
+                message: "no did is stored"
+            }
+        }
+
+        // check if there are any credentials that have a valid type
+        if (storageContents.did.credentials
+                .filter(credential => credential.type && validTypes.includes(credential.type))
+                .length
+            === 0) {
+            return {
+                success: false,
+                message: `no vc matches type filter ${JSON.stringify(validTypes)}`
             }
         }
 
@@ -294,9 +314,21 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
         // create the process to render the window
         const renderProcess = dialogManager.Render();
 
-        const credentials = await getCredentialsContentList(storageContents.did.credentials);
+        console.log(storageContents.did.credentials)
+        console.log(validTypes)
+
+        // put the list of credentials in a more readable format
+        //  filter out credentials with non-valid types
+        const credentials = (await getCredentialsContentList(
+            storageContents.did.credentials
+                .filter(credential => credential.type && validTypes.includes(credential.type))
+        ));
 
         let chosenCredential : CredentialContents | undefined;
+
+        if (credentials.length === 1) {
+            chosenCredential = credentials[0];
+        }
 
         while (true) {
             // component for the dialog box, that we can pass the credential if we want
@@ -305,14 +337,19 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
                     <Heading>Would you like to present this app with a verifiable presentation?</Heading>
                     <Text>The app can use this to verify a claim about you.</Text>
                     <Text>This presentation will expire in 1 minute.</Text>
-                    <Dropdown name="credential-selection-dropdown">
-                        <Option value="none">Choose a Credential</Option>
-                        {
-                            credentials.map((item,index) => (
-                                <Option value={item.uuid as string}>{item.name as string}</Option>
-                            ))
-                        }
-                    </Dropdown>
+                    {
+                        credentials.length > 1 ?
+                            (
+                                <Dropdown name="credential-selection-dropdown">
+                                    <Option value="none">Choose a Credential</Option>
+                                    {
+                                        credentials.map((item,index) => (
+                                            <Option value={item.uuid as string}>{item.name as string}</Option>
+                                        ))
+                                    }
+                                </Dropdown>
+                            ) : null
+                    }
                     {chosenCredential ? (<CredentialCard verifiableCredential={chosenCredential}/>) : null}
                 </Box>
             );
