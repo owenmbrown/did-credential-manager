@@ -1,5 +1,5 @@
 import { Box, Text, Bold, Heading, Form, Field, Input, Dropdown, Option, Radio, RadioGroup, Checkbox, Selector, SelectorOption, Card, Button, Footer, Container, Row, Address, Copyable, Divider, Section, Nestable, GenericSnapElement, Spinner, Italic } from '@metamask/snaps-sdk/jsx';
-import { ComponentOrElement, JsonRpcParams, JsonRpcRequest, OnUserInputHandler, UserInputEventType } from '@metamask/snaps-sdk';
+import { ComponentOrElement, Json, JsonRpcParams, JsonRpcRequest, OnUserInputHandler, UserInputEventType } from '@metamask/snaps-sdk';
 import { ethers } from 'ethers';
 import { createVerifiablePresentationJwt, Issuer, JwtPresentationPayload, verifyCredential } from 'did-jwt-vc';
 import { EthrDID } from 'ethr-did';
@@ -7,7 +7,7 @@ import { getResolver as getEthrResolver } from 'ethr-did-resolver';
 import { Resolver } from 'did-resolver';
 
 import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt, DialogManager, getCredentialContents, getCredentialsContentList } from './snap-helpers';
-import { StoreVCParams, GetVPParams, StorageContents, CredentialContents } from './types'
+import { StoreVCParams, GetVPParams, StorageContents, CredentialContents, AllCredentials } from './types'
 import { DID, InclusiveRow, CredentialCard } from './components'
 import { TripleRow } from './components/TripleRow';
 
@@ -467,10 +467,10 @@ export async function snapManageVCs() {
         const storageContents = await getSnapStorage();
             
         // verify data is formatted correctly
-        if (!storageContents /*|| storageContents.did.vc == ""*/) {
+        if (!storageContents) {
             return {
                 success: false,
-                message: "no vc is stored"
+                message: "no did is stored"
             }
         }
     
@@ -783,5 +783,44 @@ export async function snapImportIdentity() {
 
     return {
         success: true,
+    }
+}
+
+export async function snapGetAllCredentials() {
+    try {
+        const storageContents = await getSnapStorage();
+    
+        if (!storageContents) {
+            return {
+                success: false,
+                message: "no did is stored"
+            }
+        }
+    
+        const credentials = (await getCredentialsContentList(storageContents.did.credentials)).map(
+            credential => {
+                return {
+                    vc: credential.vc,
+                    name: credential.name,
+                    uuid: credential.uuid,
+                    type: credential.type,
+                    claim: credential.claim,
+                    issuer: credential.issuer,
+                    subject: credential.subject,
+                    claimString: credential.claimString,
+                }
+            }
+        );
+
+        return {
+            credentials
+        } as AllCredentials
+    }
+    catch (error) {
+        console.log(error)
+        return {
+            success: false,
+            message: "runtime error",
+        }
     }
 }

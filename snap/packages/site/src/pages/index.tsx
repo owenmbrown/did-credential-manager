@@ -172,6 +172,14 @@ const Index = () => {
     console.log(result);
   }
 
+  const handleSendGetAllCredentials = async () => {
+    const result = await invokeSnap({
+      method: 'get-all-vcs',
+    });
+  
+    console.log(result);
+  }
+
   return (
     <Container>
       <Heading>
@@ -379,6 +387,26 @@ const Index = () => {
                 onClick={handleSendImportIdentity}
                 disabled={!installedSnap}
                 ButtonText="Import"
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Get All VCs',
+            description:
+              'Get all credentials from the wallet',
+            button: (
+              <SendHelloButton
+                onClick={handleSendGetAllCredentials}
+                disabled={!installedSnap}
+                ButtonText="Get"
               />
             ),
           }}

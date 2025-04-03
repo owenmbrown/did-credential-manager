@@ -1,7 +1,7 @@
 import type { OnRpcRequestHandler } from '@metamask/snaps-sdk';
 import { Box, Text, Bold, Heading } from '@metamask/snaps-sdk/jsx';
 
-import { snapCreateDID, snapExportIdentity, snapGetDid, snapGetVP, snapImportIdentity, snapManageVCs, snapStoreVC } from './snap-methods'
+import { snapCreateDID, snapExportIdentity, snapGetAllCredentials, snapGetDid, snapGetVP, snapImportIdentity, snapManageVCs, snapStoreVC } from './snap-methods'
 import { onUserInput } from './snap-methods'
 
 const COMPANION_APP_ORIGIN = process.env.COMPANION_APP_ORIGIN
@@ -21,7 +21,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
     request,
 }) => {
     // companion app only method
-    if (['create-did','manage-vcs','export-identity','import-identity'].includes(request.method)) {
+    if (['create-did','manage-vcs','export-identity','import-identity','get-all-vc'].includes(request.method)) {
         if (origin !== COMPANION_APP_ORIGIN) {
             return {
                 success: false,
@@ -83,6 +83,14 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
         case 'import-identity': {
             // companion app only method
             const response = await snapImportIdentity();
+
+            return response;
+        }
+        case 'get-all-vcs': {
+            // companion app only method
+            const response = await snapGetAllCredentials();
+
+            console.log(response);
 
             return response;
         }

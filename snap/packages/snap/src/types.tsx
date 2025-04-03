@@ -45,3 +45,16 @@ export type UserInteraction = {
     interactionType: "button" | "input", // input is a text input or a dropdown
     interactionID: string,
 }
+
+export type AllCredentials = {
+    credentials: Array<{
+        vc: string,
+        name: string,
+        uuid: string,
+        type: string,
+        issuer: string,
+        claim: any,
+        subject: string,
+        claimString: string,
+    }>
+}
