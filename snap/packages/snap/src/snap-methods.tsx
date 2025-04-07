@@ -20,9 +20,6 @@ const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${INFU
 let dialogManager = new DialogManager();
 
 export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
-    // console.log("event");
-    // console.log(event.type);
-    // console.log(event.name);
     if (event.type === UserInputEventType.ButtonClickEvent) {
         dialogManager.UseButton(event.name,id);
     }
@@ -135,15 +132,14 @@ export async function snapGetDid() {
 export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
     try {
         // get the parans passed by the dapp
-        const params = request.params as StoreVCParams;
-        const vc = params.vc;
-        const credentialType = params.type;
-        let credentialName = params.defaultName;
+        const { vc, type, defaultName } = request.params as StoreVCParams;
+        let credentialName = defaultName;
 
-        if (!vc || !credentialType || !credentialName) {
+        // check for invalid parameters
+        if (!vc || !type || !credentialName) {
             return {
                 success: false,
-                message: `missing params: [ ${!vc ? 'vc ' : ''}${!credentialType ? 'type ' : ''}${!credentialName ? 'defaultName ' : ''}]`
+                message: `missing params: [ ${!vc ? 'vc ' : ''}${!type ? 'type ' : ''}${!credentialName ? 'defaultName ' : ''}]`
             }
         }
 
@@ -238,7 +234,7 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
             name: credentialName,
             uuid,
             vc,
-            type: credentialType
+            type
         });
         
         // store the VC in secure storage
@@ -276,9 +272,7 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
 export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
     try {
         // read the paramaters of the rpc request to get the challenge
-        const params = request.params as GetVPParams;
-        const challenge = params.challenge;
-        const validTypes = params.validTypes
+        const { challenge, validTypes} = request.params as GetVPParams;
         // check if the paramaters were set
         if (!challenge || ! validTypes) {
             return {
