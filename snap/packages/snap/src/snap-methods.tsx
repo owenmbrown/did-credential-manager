@@ -6,7 +6,7 @@ import { EthrDID } from 'ethr-did';
 import { getResolver as getEthrResolver } from 'ethr-did-resolver';
 import { Resolver } from 'did-resolver';
 
-import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt, DialogManager, getCredentialContents, getCredentialsContentList } from './snap-helpers';
+import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt, DialogManager, getCredentialContents, getCredentialsContentList, ERROR_NO_DID, ERROR_USER_REJECTED } from './snap-helpers';
 import { StoreVCParams, GetVPParams, StorageContents, CredentialContents, AllCredentials } from './types'
 import { DID, InclusiveRow, CredentialCard } from './components'
 import { TripleRow } from './components/TripleRow';
@@ -61,7 +61,7 @@ export async function snapCreateDID() {
         if (approval === false) {
             return {
                 success: false,
-                message: "user rejected dialogue"
+                message: ERROR_USER_REJECTED
             }
         }
 
@@ -120,7 +120,7 @@ export async function snapGetDid() {
         // if there is no data in storage, return failure
         return {
             success: false,
-            message: "no did is stored"
+            message: ERROR_NO_DID
         };
     }
     else {
@@ -162,7 +162,7 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
             
             return {
                 success: false,
-                message: "no did is stored"
+                message: ERROR_NO_DID
             }
         }
 
@@ -223,7 +223,7 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
             else {
                 return {
                     success: false,
-                    message: "user rejected dialogue"
+                    message: ERROR_USER_REJECTED
                 }
             }
         }
@@ -294,7 +294,7 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
         if (!storageContents) {
             return {
                 success: false,
-                message: "no did is stored"
+                message: ERROR_NO_DID
             }
         }
 
@@ -399,7 +399,7 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
             else {
                 return {
                     success: false,
-                    message: "user rejected dialogue"
+                    message: ERROR_USER_REJECTED
                 }
             }
         }
@@ -472,7 +472,7 @@ export async function snapManageVCs() {
         if (!storageContents) {
             return {
                 success: false,
-                message: "no did is stored"
+                message: ERROR_NO_DID
             }
         }
     
@@ -691,7 +691,7 @@ export async function snapManageVCs() {
             else {
                 return {
                     success: false,
-                    message: "user rejected dialogue"
+                    message: ERROR_USER_REJECTED
                 }
             }
         }
@@ -795,7 +795,7 @@ export async function snapGetAllCredentials() {
         if (!storageContents) {
             return {
                 success: false,
-                message: "no did is stored"
+                message: ERROR_NO_DID
             }
         }
     

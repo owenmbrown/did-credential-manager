@@ -8,6 +8,9 @@ import { StoreVCParams, GetVPParams, StorageContents, CredentialContents, Creden
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
+export const ERROR_USER_REJECTED = "user rejected dialogue";
+export const ERROR_NO_DID = "no did is stored";
+
 // get current state of snap secure storage
 export async function getSnapStorage() : Promise<StorageContents | null> {
     const storedData = await snap.request({
