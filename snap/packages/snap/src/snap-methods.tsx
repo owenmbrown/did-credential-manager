@@ -410,6 +410,7 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
         // read values from the storage object we received
         const wallerPrivateKey = storageContents.did.privateKey;
         const vc = chosenCredential.vc;
+        const credentialType = chosenCredential.type;
 
         // Create an EthrDID object for the issuer
         const wallet = new ethers.Wallet(wallerPrivateKey, provider);
@@ -421,7 +422,8 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
                 '@context':['https://www.w3.org/2018/credentials/v1'],
                 type: ['VerifiablePresentation'],
                 verifiableCredential: [vc],
-                challenge
+                challenge,
+                credentialType
             }
         };
 
