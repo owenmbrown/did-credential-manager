@@ -11,10 +11,6 @@ type CredentialCardProps = {
         subject: string,
         claimString: string,
     },
-    // doNameInputField?: boolean,
-    // nameInputFieldID?: string,
-    // nameInputPlaceholder?: string
-    // nameInputContents?: string,
     doCustomHeader?: boolean,
     customHeader?: any,
     doButtonRow?: boolean
@@ -25,10 +21,6 @@ type CredentialCardProps = {
 
 export const CredentialCard: SnapComponent<CredentialCardProps> = ({ 
     verifiableCredential,
-    // doNameInputField = false,
-    // nameInputFieldID = "",
-    // nameInputPlaceholder = "",
-    // nameInputContents = "",
     doCustomHeader = false,
     customHeader = null,
     doButtonRow = false,
@@ -68,7 +60,8 @@ export const CredentialCard: SnapComponent<CredentialCardProps> = ({
                             middle={buttonRowMiddle}
                             right={buttonRowRight}
                             /> 
-                    </Box>) : null
+                    </Box>
+                ) : null
             }
         </Section>
     );
