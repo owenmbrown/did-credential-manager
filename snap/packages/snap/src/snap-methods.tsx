@@ -6,7 +6,7 @@ import { EthrDID } from 'ethr-did';
 import { getResolver as getEthrResolver } from 'ethr-did-resolver';
 import { Resolver } from 'did-resolver';
 
-import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt, DialogManager, getCredentialContents, getCredentialsContentList, ERROR_NO_DID, ERROR_USER_REJECTED } from './snap-helpers';
+import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt, DialogManager, getCredentialContents, getCredentialsContentList, ERROR_NO_DID, ERROR_USER_REJECTED, ERROR_RUNTIME } from './snap-helpers';
 import { StoreVCParams, GetVPParams, StorageContents, CredentialContents, AllCredentials } from './types'
 import { DID, InclusiveRow, CredentialCard } from './components'
 import { TripleRow } from './components/TripleRow';
@@ -112,7 +112,7 @@ export async function snapCreateDID() : Promise<{ success: boolean; did?: string
         console.error(error);
         return {
             success: false,
-            message: "runtime error",
+            message: ERROR_RUNTIME,
         }
     }
 }
@@ -293,7 +293,7 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) : Prom
         console.error(error);
         return {
             success: false,
-            message: "runtime error",
+            message: ERROR_RUNTIME,
         }
     }
 }
@@ -493,7 +493,7 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) : Promis
         console.error(error);
         return {
             success: false,
-            message: "runtime error",
+            message: ERROR_RUNTIME,
         }
     }
 }
@@ -776,7 +776,7 @@ export async function snapManageVCs() : Promise<{ success: boolean; message?: st
         console.error(error);
         return {
             success: false,
-            message: "runtime error",
+            message: ERROR_RUNTIME,
         }
     }
 }
@@ -876,7 +876,7 @@ export async function snapGetAllCredentials() : Promise<{ success: boolean; cred
         console.error(error)
         return {
             success: false,
-            message: "runtime error",
+            message: ERROR_RUNTIME,
         }
     }
 }
