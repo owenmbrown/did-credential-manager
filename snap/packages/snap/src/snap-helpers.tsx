@@ -32,36 +32,6 @@ export async function setSnapStorage(newState: Record<string, Json>) {
     });
 }
 
-async function displayDialogue(content : ComponentOrElement, type : 'alert' | 'confirmation' | 'prompt' ) {
-    const result = await snap.request({
-        method: 'snap_dialog',
-        params: {
-            type,
-            content,
-        },
-    }); 
-
-    return result;
-}
-
-// displays a dialogue window
-export async function displayAlert(content : ComponentOrElement) {
-    return await displayDialogue(content,'alert');
-}
-
-// displays a dialogue window with an 'approve' and 'deny' button
-// returns true if the user approves, and false otherwisse
-export async function displayConfirmation(content : ComponentOrElement) : Promise<boolean> {
-    return (await displayDialogue(content,'confirmation')) === true;
-}
-
-// displays a dialogue window with a text input
-// returns whatever the user types in the text box
-export async function displayPrompt(content : ComponentOrElement) : Promise<string> {
-    return (await displayDialogue(content,'prompt')) as string;
-}
-
-
 export async function getCredentialContents(vc : string) : Promise<CredentialContents> {
     // initialize did:ethr resolver
     const resolver = new Resolver({
