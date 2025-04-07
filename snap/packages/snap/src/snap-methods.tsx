@@ -36,7 +36,7 @@ export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
  *    - success: true if the DID was successfully created and stored.
  *    - success: false with an error message if the operation failed (e.g., user rejected dialog).
  */
-export async function snapCreateDID() {
+export async function snapCreateDID() : Promise<{ success: boolean; did?: string; message?: string; }> {
     try {
         await dialogManager.NewDialog();
 
@@ -125,7 +125,7 @@ export async function snapCreateDID() {
  *    - success: true with the stored DID address.
  *    - success: false with an error message if no DID is found.
  */
-export async function snapGetDid() {
+export async function snapGetDid() : Promise<{ success: boolean; did?: string; message?: string; }> {
     // get current state of snap secure storage
     const storageContents = await getSnapStorage();
 
@@ -158,7 +158,7 @@ export async function snapGetDid() {
  *    - success: true if the VC was successfully stored.
  *    - success: false with an error message if the operation failed (e.g., user rejected dialog or missing parameters).
  */
-export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
+export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) : Promise<{ success: boolean; message?: string; }> {
     try {
         // get the parans passed by the dapp
         const { vc, type, defaultName } = request.params as StoreVCParams;
@@ -310,7 +310,7 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
  *    - success: true with the signed VP if successful.
  *    - success: false with an error message if the operation failed (e.g., missing parameters, no valid VC, or no DID).
  */
-export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
+export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) : Promise<{ success: boolean; vp?: string; message?: string; }> {
     try {
         // read the paramaters of the rpc request to get the challenge
         const { challenge, validTypes} = request.params as GetVPParams;
@@ -506,7 +506,7 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
  *    - success: true if changes were successfully applied (e.g., credentials edited, deleted, or recovered).
  *    - success: false with an error message if the operation failed (e.g., no DID stored, user rejected dialog).
  */
-export async function snapManageVCs() {
+export async function snapManageVCs() : Promise<{ success: boolean; message?: string; }> {
     try  {
         // get current state of snap secure storage
         const storageContents = await getSnapStorage();
@@ -841,7 +841,7 @@ export async function snapImportIdentity() {
  *    - success: true with the list of credentials.
  *    - success: false with an error message if the operation failed (e.g., no DID stored).
  */
-export async function snapGetAllCredentials() {
+export async function snapGetAllCredentials() : Promise<{ success: boolean; credentials?: Array<object>; message?: string; }> {
     try {
         const storageContents = await getSnapStorage();
     
@@ -868,6 +868,7 @@ export async function snapGetAllCredentials() {
         );
 
         return {
+            success: true,
             credentials
         } as AllCredentials
     }

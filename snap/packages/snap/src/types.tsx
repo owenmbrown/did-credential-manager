@@ -47,6 +47,7 @@ export type UserInteraction = {
 }
 
 export type AllCredentials = {
+    success: boolean,
     credentials: Array<{
         vc: string,
         name: string,
