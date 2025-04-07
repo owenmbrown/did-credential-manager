@@ -1,7 +1,6 @@
-import { Bold, Box, Button, Divider, Form, Heading, Input, Section, SnapComponent, Text } from "@metamask/snaps-sdk/jsx";
+import { Box, Divider, Heading, Section, SnapComponent, Text } from "@metamask/snaps-sdk/jsx";
 
 import { InclusiveRow, DID } from "../components";
-import { CredentialContents } from "src/types";
 import { TripleRow } from "./TripleRow";
 
 type CredentialCardProps = {

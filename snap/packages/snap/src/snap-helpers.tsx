@@ -4,7 +4,7 @@ import { getResolver as getEthrResolver } from 'ethr-did-resolver';
 import { Resolver } from 'did-resolver';
 import { verifyCredential } from 'did-jwt-vc';
 
-import { StoreVCParams, GetVPParams, StorageContents, CredentialContents, Credential, UserInteraction } from './types';
+import { StorageContents, CredentialContents, Credential, UserInteraction } from './types';
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 

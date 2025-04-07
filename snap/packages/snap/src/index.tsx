@@ -1,5 +1,5 @@
 import type { OnRpcRequestHandler } from '@metamask/snaps-sdk';
-import { Box, Text, Bold, Heading } from '@metamask/snaps-sdk/jsx';
+import { Box, Text, Bold } from '@metamask/snaps-sdk/jsx';
 
 import { snapCreateDID, snapExportIdentity, snapGetAllCredentials, snapGetDid, snapGetVP, snapImportIdentity, snapManageVCs, snapStoreVC } from './snap-methods'
 import { onUserInput } from './snap-methods'

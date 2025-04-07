@@ -1,14 +1,12 @@
-import { Box, Text, Bold, Heading, Form, Field, Input, Dropdown, Option, Radio, RadioGroup, Checkbox, Selector, SelectorOption, Card, Button, Footer, Container, Row, Address, Copyable, Divider, Section, Nestable, GenericSnapElement, Spinner, Italic } from '@metamask/snaps-sdk/jsx';
-import { ComponentOrElement, Json, JsonRpcParams, JsonRpcRequest, OnUserInputHandler, UserInputEventType } from '@metamask/snaps-sdk';
+import { Box, Text, Bold, Heading, Input, Dropdown, Option, Button, Footer, Container, Copyable, Divider, Italic } from '@metamask/snaps-sdk/jsx';
+import { JsonRpcParams, JsonRpcRequest, OnUserInputHandler, UserInputEventType } from '@metamask/snaps-sdk';
 import { ethers } from 'ethers';
-import { createVerifiablePresentationJwt, Issuer, JwtPresentationPayload, verifyCredential } from 'did-jwt-vc';
+import { createVerifiablePresentationJwt, Issuer, JwtPresentationPayload } from 'did-jwt-vc';
 import { EthrDID } from 'ethr-did';
-import { getResolver as getEthrResolver } from 'ethr-did-resolver';
-import { Resolver } from 'did-resolver';
 
-import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt, DialogManager, getCredentialContents, getCredentialsContentList, ERROR_NO_DID, ERROR_USER_REJECTED, ERROR_RUNTIME } from './snap-helpers';
-import { StoreVCParams, GetVPParams, StorageContents, CredentialContents, AllCredentials } from './types'
-import { DID, InclusiveRow, CredentialCard } from './components'
+import { getSnapStorage, setSnapStorage, DialogManager, getCredentialContents, getCredentialsContentList, ERROR_NO_DID, ERROR_USER_REJECTED, ERROR_RUNTIME } from './snap-helpers';
+import { StoreVCParams, GetVPParams, CredentialContents, AllCredentials } from './types'
+import { CredentialCard } from './components'
 import { TripleRow } from './components/TripleRow';
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
@@ -176,15 +174,7 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) : Prom
         const storageContents = await getSnapStorage();
 
         if (!storageContents) {
-            // if the data doesn't exist, display a dialogue and return failure
-            await displayAlert(
-                <Box>
-                    <Text>
-                        <Bold>Credential store failed.  No did:ethr found</Bold>
-                    </Text>
-                </Box>
-            );
-            
+            // if the data doesn't exist return failure
             return {
                 success: false,
                 message: ERROR_NO_DID
