@@ -105,7 +105,7 @@ await invokeSnap({
   params: {
     vc: "your-verifiable-credential",
     type: "credential-type",
-    defaultName: "credential-name"
+    defaultName: "credential name"
   }
 });
 ```
@@ -211,6 +211,7 @@ await invokeSnap({
 Returns a list of credentials.
 ```
 {
+  "success": true
   "credentials": [
     {
       "vc": "credential-data",
