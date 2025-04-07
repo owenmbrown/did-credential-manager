@@ -28,6 +28,14 @@ export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
     }
 }
 
+/**
+ * Creates a new Decentralized Identifier (DID) of type `did:ethr` and stores it in Snap's secure storage.
+ * Prompts the user for confirmation before creating the DID, and displays a success dialog with the DID address.
+ * 
+ * @returns {Promise<{success: boolean, did?: string, message?: string}>} A promise resolving to the result of the DID creation attempt.
+ *    - success: true if the DID was successfully created and stored.
+ *    - success: false with an error message if the operation failed (e.g., user rejected dialog).
+ */
 export async function snapCreateDID() {
     try {
         await dialogManager.NewDialog();
@@ -101,7 +109,7 @@ export async function snapCreateDID() {
         }
     }
     catch (error) {
-        console.log(error)
+        console.error(error);
         return {
             success: false,
             message: "runtime error",
@@ -109,6 +117,14 @@ export async function snapCreateDID() {
     }
 }
 
+/**
+ * Retrieves the stored `did:ethr` from Snap's secure storage.
+ * If no DID has been created or stored, returns a failure message.
+ * 
+ * @returns {Promise<{success: boolean, did?: string, message?: string}>} A promise resolving to the retrieved DID address or failure message.
+ *    - success: true with the stored DID address.
+ *    - success: false with an error message if no DID is found.
+ */
 export async function snapGetDid() {
     // get current state of snap secure storage
     const storageContents = await getSnapStorage();
@@ -129,6 +145,19 @@ export async function snapGetDid() {
     }
 }
 
+/**
+ * Stores a Verifiable Credential (VC) associated with the current DID in Snap's secure storage.
+ * Displays a confirmation dialog for the user before storing the VC. If no DID is found, an error message is shown.
+ * 
+ * @param {JsonRpcRequest<JsonRpcParams>} request The request object containing the VC, type, and default name.
+ *    - vc: The Verifiable Credential to store.
+ *    - type: The type of the credential.
+ *    - defaultName: The default name for the credential.
+ * 
+ * @returns {Promise<{success: boolean, message?: string}>} A promise resolving to the result of the VC storing operation.
+ *    - success: true if the VC was successfully stored.
+ *    - success: false with an error message if the operation failed (e.g., user rejected dialog or missing parameters).
+ */
 export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
     try {
         // get the parans passed by the dapp
@@ -261,7 +290,7 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
         }
     }
     catch (error) {
-        console.log(error)
+        console.error(error);
         return {
             success: false,
             message: "runtime error",
@@ -269,6 +298,18 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
     }
 }
 
+/**
+ * Generates a Verifiable Presentation (VP) by signing the stored Verifiable Credential (VC) with the DID's private key.
+ * Requires a `challenge` and `validTypes` parameters. If no VC of the valid type is found, an error message is shown.
+ * 
+ * @param {JsonRpcRequest<JsonRpcParams>} request The request object containing the challenge and valid types.
+ *    - challenge: A string used to generate the Verifiable Presentation.
+ *    - validTypes: An array of valid credential types that can be used in the presentation.
+ * 
+ * @returns {Promise<{success: boolean, vp?: string, message?: string}>} A promise resolving to the signed VP JWT or failure message.
+ *    - success: true with the signed VP if successful.
+ *    - success: false with an error message if the operation failed (e.g., missing parameters, no valid VC, or no DID).
+ */
 export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
     try {
         // read the paramaters of the rpc request to get the challenge
@@ -449,7 +490,7 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
         }
     }
     catch (error) {
-        console.log(error)
+        console.error(error);
         return {
             success: false,
             message: "runtime error",
@@ -457,6 +498,14 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
     }
 }
 
+/**
+ * Allows the user to manage their stored Verifiable Credentials (VCs), including editing, deleting, or recovering them.
+ * Displays a dialog with the list of credentials, allowing the user to interact with each credential (e.g., edit name, delete, or recover).
+ * 
+ * @returns {Promise<{success: boolean, message?: string}>} A promise resolving to the result of the VC management operation.
+ *    - success: true if changes were successfully applied (e.g., credentials edited, deleted, or recovered).
+ *    - success: false with an error message if the operation failed (e.g., no DID stored, user rejected dialog).
+ */
 export async function snapManageVCs() {
     try  {
         // get current state of snap secure storage
@@ -724,7 +773,7 @@ export async function snapManageVCs() {
         }
     }
     catch (error) {
-        console.log(error)
+        console.error(error);
         return {
             success: false,
             message: "runtime error",
@@ -732,6 +781,7 @@ export async function snapManageVCs() {
     }
 }
 
+// TODO: finish method
 export async function snapExportIdentity() {
     // create a new dialog window
     await dialogManager.NewDialog();
@@ -757,6 +807,7 @@ export async function snapExportIdentity() {
     }
 }
 
+// TODO: finish method
 export async function snapImportIdentity() {
     // create a new dialog window
     await dialogManager.NewDialog();
@@ -782,6 +833,14 @@ export async function snapImportIdentity() {
     }
 }
 
+/**
+ * Retrieves all stored Verifiable Credentials (VCs) from Snap's secure storage.
+ * Returns a list of all credentials associated with the stored DID.
+ * 
+ * @returns {Promise<{success: boolean, credentials?: Array<Object>, message?: string}>} A promise resolving to the list of credentials or a failure message.
+ *    - success: true with the list of credentials.
+ *    - success: false with an error message if the operation failed (e.g., no DID stored).
+ */
 export async function snapGetAllCredentials() {
     try {
         const storageContents = await getSnapStorage();
@@ -813,7 +872,7 @@ export async function snapGetAllCredentials() {
         } as AllCredentials
     }
     catch (error) {
-        console.log(error)
+        console.error(error)
         return {
             success: false,
             message: "runtime error",
