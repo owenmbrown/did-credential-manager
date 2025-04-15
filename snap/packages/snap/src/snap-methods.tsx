@@ -40,39 +40,89 @@ export async function snapCreateDID() : Promise<{ success: boolean; did?: string
 
         const renderProcess = dialogManager.Render();
 
-        // ask user for consent
-        await dialogManager.UpdatePage(
-            <Container>
-                <Box>
-                    <Heading>Would you like to create a new did:ethr?</Heading>
-                    <Text>This identity can be used to create and store verifiable credentials.</Text>
-                    <Text>Warning: This will overwrite any previous dids that have been stored</Text>
-                </Box>
-                <Footer>
-                    <Button type="button" name="confirm" form="userInfoForm">
-                    Confirm
-                    </Button>
-                </Footer>
-            </Container>
-        ); 
+        let useExistingDID = false;
+        let walletKey = "";
+        let showBadKeyError = false;
 
-        const buttonID = (await dialogManager.WaitForInteraction())?.interactionID;
+        while (true) {
+            // ask user for consent
+            await dialogManager.UpdatePage(
+                <Container>
+                    <Box>
+                        <Heading>Would you like to create a new did:ethr?</Heading>
+                        <Text>This identity can be used to create and store verifiable credentials.</Text>
+                        <Text><Italic>Warning: This will overwrite any previous identities and credentials that have been stored</Italic></Text>
+                        <Dropdown name="dropdown">
+                            <Option value="new">Create new ethereum wallet</Option>
+                            <Option value="existing">Use existing ethereum wallet</Option>
+                        </Dropdown>
+                        {useExistingDID ? 
+                            <Box>
+                                <Divider/>
+                                <Text><Bold>Private key of the ethereum wallet you want to use:</Bold></Text>
+                                <Input name={"wallet-key-input"} placeholder="Your ethereum wallet key" />
+                            </Box>
+                        : null}
+                        {showBadKeyError ?
+                            <Text color='error'><Italic>Invalid Key</Italic></Text>
+                        : null}
+                    </Box>
+                    <Footer>
+                        <Button type="button" name="confirm" form="userInfoForm">
+                        Confirm
+                        </Button>
+                    </Footer>
+                </Container>
+            ); 
+    
+            // wait for user interaction
+            const userInteraction = await dialogManager.WaitForInteraction();
 
-        const approval = (buttonID === "confirm");
+            if (userInteraction?.interactionType === "button" && userInteraction?.interactionID.startsWith("confirm")) {
+                if (useExistingDID) {
+                    // get the contents of the text box
+                    const contents = await dialogManager.GetFormContents();
 
-        // return if user rejects prompt
-        if (approval === false) {
-            return {
-                success: false,
-                message: ERROR_USER_REJECTED
+                    console.log(contents["wallet-key-input"]);
+
+                    try {
+                        new ethers.Wallet(contents["wallet-key-input"] as string);
+                        
+                        walletKey = contents["wallet-key-input"] as string;
+                    }
+                    catch (err) {
+                        showBadKeyError = true;
+                        continue;
+                    }
+                }
+
+                break;
             }
-        }
+            else if (userInteraction?.interactionType === "input" && userInteraction?.interactionID.startsWith("dropdown")) {
+                // get the contents of the dropdown
+                const contents = await dialogManager.GetFormContents();
+
+                useExistingDID = contents["dropdown"] === "existing";
+
+                showBadKeyError = false;
+            }
+            else if (userInteraction?.interactionType === "input") {
+                // interacted with text input box
+            }
+            // return if user rejects prompt
+            else {
+                return {
+                    success: false,
+                    message: ERROR_USER_REJECTED
+                }
+            }
+        } 
 
         // display a loading wheel
         await dialogManager.ShowLoadingPage();
 
         // create a new did:ethr
-        const wallet = ethers.Wallet.createRandom();
+        const wallet = useExistingDID ? new ethers.Wallet(walletKey) : ethers.Wallet.createRandom();
 
         // Extract keys and address
         const privateKey = wallet.privateKey;
