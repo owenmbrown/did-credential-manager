@@ -1,4 +1,4 @@
-import { Box, Divider, Heading, Section, SnapComponent, Text } from "@metamask/snaps-sdk/jsx";
+import { Box, Divider, Heading, Italic, Section, SnapComponent, Text } from "@metamask/snaps-sdk/jsx";
 
 import { InclusiveRow, DID } from "../components";
 import { TripleRow } from "./TripleRow";
@@ -18,6 +18,25 @@ type CredentialCardProps = {
     buttonRowMiddle?: any
     buttonRowRight?: any
 }
+
+const INVISIBLE_SPACE = "‎ ";
+export function preserveLeadingSpaces(text: string): string {
+    return (text 
+    .split('\n')
+    .map((line) => {
+    const leadingSpaces = line.match(/^ +/g)?.[0]?.length ?? 0;
+    const invisiblePrefix = INVISIBLE_SPACE.repeat(leadingSpaces * 2);
+    return invisiblePrefix + line.trimStart();
+    })
+    .join('\n'));
+}
+
+function renderMultilineText(content: string) {
+    return content.split('\n').map((line, index) => (
+        <Text><Italic>{preserveLeadingSpaces(line)}</Italic></Text>
+    ));
+}
+
 
 export const CredentialCard: SnapComponent<CredentialCardProps> = ({ 
     verifiableCredential,
@@ -49,8 +68,9 @@ export const CredentialCard: SnapComponent<CredentialCardProps> = ({
                 <DID did={verifiableCredential.subject} />
             </InclusiveRow>
             <InclusiveRow label="Claim">
-                <Text>{verifiableCredential.claimString}</Text>
+                <Text> </Text>
             </InclusiveRow>
+            {renderMultilineText(verifiableCredential.claimString)}
             {
                 doButtonRow ? (
                     <Box>
