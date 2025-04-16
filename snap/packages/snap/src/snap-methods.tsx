@@ -1,61 +1,155 @@
-import { Box, Text, Bold, Heading } from '@metamask/snaps-sdk/jsx';
-import { JsonRpcParams, JsonRpcRequest } from '@metamask/snaps-sdk';
+import { Box, Text, Bold, Heading, Input, Dropdown, Option, Button, Footer, Container, Copyable, Divider, Italic } from '@metamask/snaps-sdk/jsx';
+import { JsonRpcParams, JsonRpcRequest, OnUserInputHandler, UserInputEventType } from '@metamask/snaps-sdk';
 import { ethers } from 'ethers';
 import { createVerifiablePresentationJwt, Issuer, JwtPresentationPayload } from 'did-jwt-vc';
 import { EthrDID } from 'ethr-did';
 
-import { getSnapStorage, setSnapStorage, displayAlert, displayConfirmation, displayPrompt } from './snap-helpers';
-import { StoreVCParams, GetVPParams, StorageContents } from './types'
+import { getSnapStorage, setSnapStorage, DialogManager, getCredentialContents, getCredentialsContentList, ERROR_NO_DID, ERROR_USER_REJECTED, ERROR_RUNTIME } from './snap-helpers';
+import { StoreVCParams, GetVPParams, CredentialContents, AllCredentials } from './types'
+import { CredentialCard } from './components'
+import { TripleRow } from './components/TripleRow';
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
 // initialized rpc provider
 const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`);
 
-export async function snapCreateDID() {
-    try {
-        // ask user for consent
-        const approval = await displayConfirmation(
-            <Box>
-                <Heading>Would you like to create a new did:ethr?</Heading>
-                <Text>This identity can be used to create and store verifiable credentials.</Text>
-                <Text>Warning: This will overwrite any previous dids that have been stored</Text>
-            </Box>
-        ); 
+// initalize dialog manager
+let dialogManager = new DialogManager();
 
-        // return if user rejects prompt
-        if (approval === false) {
-            return {
-                success: false,
-                message: "user rejected dialogue"
+export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
+    if (event.type === UserInputEventType.ButtonClickEvent) {
+        dialogManager.UseButton(event.name,id);
+    }
+    else if (event.type === UserInputEventType.InputChangeEvent) {
+        dialogManager.UseDropdown(event.name,id);
+    }
+}
+
+/**
+ * Creates a new Decentralized Identifier (DID) of type `did:ethr` and stores it in Snap's secure storage.
+ * Prompts the user for confirmation before creating the DID, and displays a success dialog with the DID address.
+ * 
+ * @returns {Promise<{success: boolean, did?: string, message?: string}>} A promise resolving to the result of the DID creation attempt.
+ *    - success: true if the DID was successfully created and stored.
+ *    - success: false with an error message if the operation failed (e.g., user rejected dialog).
+ */
+export async function snapCreateDID() : Promise<{ success: boolean; did?: string; message?: string; }> {
+    try {
+        await dialogManager.NewDialog();
+
+        const renderProcess = dialogManager.Render();
+
+        let useExistingDID = false;
+        let walletKey = "";
+        let showBadKeyError = false;
+
+        while (true) {
+            // ask user for consent
+            await dialogManager.UpdatePage(
+                <Container>
+                    <Box>
+                        <Heading>Would you like to create a new did:ethr?</Heading>
+                        <Text>This identity can be used to create and store verifiable credentials.</Text>
+                        <Text><Italic>Warning: This will overwrite any previous identities and credentials that have been stored</Italic></Text>
+                        <Dropdown name="dropdown">
+                            <Option value="new">Create new ethereum wallet</Option>
+                            <Option value="existing">Use existing ethereum wallet</Option>
+                        </Dropdown>
+                        {useExistingDID ? 
+                            <Box>
+                                <Divider/>
+                                <Text><Bold>Private key of the ethereum wallet you want to use:</Bold></Text>
+                                <Input name={"wallet-key-input"} placeholder="Your ethereum wallet key" />
+                            </Box>
+                        : null}
+                        {showBadKeyError ?
+                            <Text color='error'><Italic>Invalid Key</Italic></Text>
+                        : null}
+                    </Box>
+                    <Footer>
+                        <Button type="button" name="confirm" form="userInfoForm">
+                        Confirm
+                        </Button>
+                    </Footer>
+                </Container>
+            ); 
+    
+            // wait for user interaction
+            const userInteraction = await dialogManager.WaitForInteraction();
+
+            if (userInteraction?.interactionType === "button" && userInteraction?.interactionID.startsWith("confirm")) {
+                if (useExistingDID) {
+                    // get the contents of the text box
+                    const contents = await dialogManager.GetFormContents();
+
+                    console.log(contents["wallet-key-input"]);
+
+                    try {
+                        new ethers.Wallet(contents["wallet-key-input"] as string);
+                        
+                        walletKey = contents["wallet-key-input"] as string;
+                    }
+                    catch (err) {
+                        showBadKeyError = true;
+                        continue;
+                    }
+                }
+
+                break;
             }
-        }
+            else if (userInteraction?.interactionType === "input" && userInteraction?.interactionID.startsWith("dropdown")) {
+                // get the contents of the dropdown
+                const contents = await dialogManager.GetFormContents();
+
+                useExistingDID = contents["dropdown"] === "existing";
+
+                showBadKeyError = false;
+            }
+            else if (userInteraction?.interactionType === "input") {
+                // interacted with text input box
+            }
+            // return if user rejects prompt
+            else {
+                return {
+                    success: false,
+                    message: ERROR_USER_REJECTED
+                }
+            }
+        } 
+
+        // display a loading wheel
+        await dialogManager.ShowLoadingPage();
 
         // create a new did:ethr
-        const wallet = ethers.Wallet.createRandom();
+        const wallet = useExistingDID ? new ethers.Wallet(walletKey) : ethers.Wallet.createRandom();
 
         // Extract keys and address
         const privateKey = wallet.privateKey;
-        const address = wallet.address;
+        const address = `did:ethr:${wallet.address}`;
 
         // Update the state storage to include
         setSnapStorage({ 
             did: {
                 privateKey,
                 address,
-                vc: ""
+                credentials: [],
             }
         });
 
         // show a success dialogue
-        await displayAlert(
-            <Box>
-                <Heading>Identifier Created</Heading>
-                <Text>
-                    <Bold>did:ethr:{address}</Bold>
-                </Text>
-            </Box>
+        await dialogManager.UpdatePage(
+            <Container>
+                <Box center={true}>
+                    <Heading>Identifier Created</Heading>
+                    <Divider />
+                    <Copyable value={address} />
+                </Box>
+            </Container>
         );
+
+        // wait for the user to close the dialog
+        await renderProcess;
 
         return {
             success: true,
@@ -63,15 +157,23 @@ export async function snapCreateDID() {
         }
     }
     catch (error) {
-        console.log(error)
+        console.error(error);
         return {
             success: false,
-            message: "runtime error",
+            message: ERROR_RUNTIME,
         }
     }
 }
 
-export async function snapGetDid() {
+/**
+ * Retrieves the stored `did:ethr` from Snap's secure storage.
+ * If no DID has been created or stored, returns a failure message.
+ * 
+ * @returns {Promise<{success: boolean, did?: string, message?: string}>} A promise resolving to the retrieved DID address or failure message.
+ *    - success: true with the stored DID address.
+ *    - success: false with an error message if no DID is found.
+ */
+export async function snapGetDid() : Promise<{ success: boolean; did?: string; message?: string; }> {
     // get current state of snap secure storage
     const storageContents = await getSnapStorage();
 
@@ -79,7 +181,7 @@ export async function snapGetDid() {
         // if there is no data in storage, return failure
         return {
             success: false,
-            message: "no did is stored"
+            message: ERROR_NO_DID
         };
     }
     else {
@@ -91,94 +193,172 @@ export async function snapGetDid() {
     }
 }
 
-export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) {
+/**
+ * Stores a Verifiable Credential (VC) associated with the current DID in Snap's secure storage.
+ * Displays a confirmation dialog for the user before storing the VC. If no DID is found, an error message is shown.
+ * 
+ * @param {JsonRpcRequest<JsonRpcParams>} request The request object containing the VC, type, and default name.
+ *    - vc: The Verifiable Credential to store.
+ *    - type: The type of the credential.
+ *    - defaultName: The default name for the credential.
+ * 
+ * @returns {Promise<{success: boolean, message?: string}>} A promise resolving to the result of the VC storing operation.
+ *    - success: true if the VC was successfully stored.
+ *    - success: false with an error message if the operation failed (e.g., user rejected dialog or missing parameters).
+ */
+export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) : Promise<{ success: boolean; message?: string; }> {
     try {
         // get the parans passed by the dapp
-        const params = request.params as StoreVCParams;
-        const vc = params.vc;
+        const { vc, type, defaultName } = request.params as StoreVCParams;
+        let credentialName = defaultName;
+
+        // check for invalid parameters
+        if (!vc || !type || !credentialName) {
+            return {
+                success: false,
+                message: `missing params: [ ${!vc ? 'vc ' : ''}${!type ? 'type ' : ''}${!credentialName ? 'defaultName ' : ''}]`
+            }
+        }
 
         // get current state of snap secure storage
         const storageContents = await getSnapStorage();
 
         if (!storageContents) {
-            // if the data doesn't exist, display a dialogue and return failure
-            await displayAlert(
-                <Box>
-                    <Text>
-                        <Bold>Credential store failed.  No did:ethr found</Bold>
-                    </Text>
-                </Box>
-            );
-            
+            // if the data doesn't exist return failure
             return {
                 success: false,
-                message: "no did is stored"
+                message: ERROR_NO_DID
             }
         }
 
-        // // initialize did:ethr resolver
-        // const resolver = new Resolver({
-        //     ...getEthrResolver({ infuraProjectId: INFURA_PROJECT_ID }),
-        // });
+        // parse the VC to get it's contents
+        const credentialContents = await getCredentialContents(vc);        
+        console.log(credentialContents.jwt);
         
-        // // Verify the VC JWT
-        // const verificationResult = await verifyCredential(vc, resolver);
+        // create a new dialog window
+        await dialogManager.NewDialog();
+        
+        // create the process to render the window
+        const renderProcess = dialogManager.Render();
 
-        // console.log(verificationResult);
+        // TODO: verify the address in storage matches the address in the credential
 
         // ask user for consent
-        const approval = await displayConfirmation(
-            <Box>
-                <Heading>Would you like to store this verifiable credential?</Heading>
-                <Text>Using the identity did:ethr:{storageContents.did.address} </Text>
-            </Box>
+        await dialogManager.UpdatePage(
+            <Container>
+                <Box>
+                    <Heading>Would you like to store this verifiable credential?</Heading>
+                    <CredentialCard 
+                        verifiableCredential={credentialContents} 
+                        doCustomHeader 
+                        customHeader={
+                            <Input name={'credential-name-input'} placeholder={"Credential Name"} value={credentialName}/>
+                        }
+                    />
+                </Box>
+                <Footer>
+                    <Button type="button" name="confirm" form="userInfoForm">
+                    Confirm
+                    </Button>
+                </Footer>
+            </Container>
         );
-        // return if user rejects prompt
-        if (approval === false) {
-            return {
-                success: false,
-                message: "user rejected dialogue"
+
+        while (true) {
+            const userInteraction = await dialogManager.WaitForInteraction();
+            // const approval = ((await dialogManager.WaitForInput())?.inputID === "confirm");
+
+            // user interacts with text box
+            if (userInteraction?.interactionType === "input") {
+                continue;
+            }
+            // user hits the confirm button
+            else if (userInteraction?.interactionType === "button" && userInteraction?.interactionID === "confirm") {
+                // get the contents of the text box
+                const contents = await dialogManager.GetFormContents();
+
+                credentialName = (contents["credential-name-input"] ?? credentialName) as string;
+                credentialContents.name = credentialName;
+
+                // break out of loop if name is valid
+                if (credentialName.length >= 3) break;
+                // TODO: better user feedback for invalid names
+            }
+            // return if user rejects prompt
+            else {
+                return {
+                    success: false,
+                    message: ERROR_USER_REJECTED
+                }
             }
         }
 
+        // display a loading wheel
+        await dialogManager.ShowLoadingPage();
+
+        const uuid = crypto.randomUUID();
+
         // update the VC in the object
-        storageContents.did.vc = vc
+        storageContents.did.credentials.push({
+            name: credentialName,
+            uuid,
+            vc,
+            type
+        });
         
         // store the VC in secure storage
         setSnapStorage(storageContents);
 
         // display a confirmation alert
-        await displayAlert(
+        await dialogManager.UpdatePage(
             <Box>
-                <Text>
-                    <Bold>Credential stored successfully</Bold>
-                </Text>
+                <Box center={true}>
+                    <Heading>
+                        Credential Stored Successfully
+                    </Heading>
+                </Box>
+                <Divider/>
+                <CredentialCard verifiableCredential={credentialContents}/>
             </Box>
         );
+
+        // wait for the user to close the dialog
+        await renderProcess;
 
         return {
             success: true
         }
     }
     catch (error) {
-        console.log(error)
+        console.error(error);
         return {
             success: false,
-            message: "runtime error",
+            message: ERROR_RUNTIME,
         }
     }
 }
 
-export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
+/**
+ * Generates a Verifiable Presentation (VP) by signing the stored Verifiable Credential (VC) with the DID's private key.
+ * Requires a `challenge` and `validTypes` parameters. If no VC of the valid type is found, an error message is shown.
+ * 
+ * @param {JsonRpcRequest<JsonRpcParams>} request The request object containing the challenge and valid types.
+ *    - challenge: A string used to generate the Verifiable Presentation.
+ *    - validTypes: An array of valid credential types that can be used in the presentation.
+ * 
+ * @returns {Promise<{success: boolean, vp?: string, message?: string}>} A promise resolving to the signed VP JWT or failure message.
+ *    - success: true with the signed VP if successful.
+ *    - success: false with an error message if the operation failed (e.g., missing parameters, no valid VC, or no DID).
+ */
+export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) : Promise<{ success: boolean; vp?: string; message?: string; }> {
     try {
         // read the paramaters of the rpc request to get the challenge
-        const params = request.params as GetVPParams;
-        const challenge = params.challenge;
-        // check if the challenge was actually set
-        if (!challenge) {
+        const { challenge, validTypes} = request.params as GetVPParams;
+        // check if the paramaters were set
+        if (!challenge || ! validTypes) {
             return {
                 success: false,
-                message: "missing challenge"
+                message:  `missing params: [ ${!challenge ? 'challenge ' : ''}${!validTypes ? 'validTypes ' : ''}]`
             }
         }
         
@@ -186,32 +366,126 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
         const storageContents = await getSnapStorage();
         
         // verify data is formatted correctly
-        if (!storageContents || storageContents.did.vc == "") {
+        if (!storageContents) {
             return {
                 success: false,
-                message: "no vc is stored"
+                message: ERROR_NO_DID
             }
         }
 
-        // ask user for consent
-        const approval = await displayConfirmation(
-            <Box>
-                <Heading>Would you like to present this app with a verifiable presentation?</Heading>
-                <Text>The app can use this to verify a claim about you.</Text>
-                <Text>This presentation will expire in 1 minute.</Text>
-            </Box>
-        );
-        // return if user rejects prompt
-        if (approval === false) {
+        // check if there are any credentials that have a valid type
+        if (storageContents.did.credentials
+                .filter(credential => credential.type && validTypes.includes(credential.type))
+                .length
+            === 0) {
             return {
                 success: false,
-                message: "user rejected dialogue"
+                message: `no vc matches type filter ${JSON.stringify(validTypes)}`
             }
         }
+
+        // create a new dialog window
+        await dialogManager.NewDialog();
+
+        // create the process to render the window
+        const renderProcess = dialogManager.Render();
+
+        console.log(storageContents.did.credentials)
+        console.log(validTypes)
+
+        // put the list of credentials in a more readable format
+        //  filter out credentials with non-valid types
+        const credentials = (await getCredentialsContentList(
+            storageContents.did.credentials
+                .filter(credential => credential.type && validTypes.includes(credential.type))
+        ));
+
+        let chosenCredential : CredentialContents | undefined;
+
+        if (credentials.length === 1) {
+            chosenCredential = credentials[0];
+        }
+
+        while (true) {
+            // component for the dialog box, that we can pass the credential if we want
+            const pageComponent = (
+                <Box>
+                    <Heading>Would you like to present this app with a verifiable presentation?</Heading>
+                    <Text>The app can use this to verify a claim about you.</Text>
+                    <Text>This presentation will expire in 1 minute.</Text>
+                    {
+                        credentials.length > 1 ?
+                            (
+                                <Dropdown name="credential-selection-dropdown">
+                                    <Option value="none">Choose a Credential</Option>
+                                    {
+                                        credentials.map((item,index) => (
+                                            <Option value={item.uuid as string}>{item.name as string}</Option>
+                                        ))
+                                    }
+                                </Dropdown>
+                            ) : null
+                    }
+                    {chosenCredential ? (<CredentialCard verifiableCredential={chosenCredential}/>) : null}
+                </Box>
+            );
+
+            if (chosenCredential) {
+                // page with confirm button
+                await dialogManager.UpdatePage(
+                    <Container>
+                        {pageComponent}
+                        <Footer>
+                            <Button type="button" name="confirm" form="userInfoForm">
+                            Confirm
+                            </Button>
+                        </Footer>
+                    </Container>
+                );
+            }
+            else {
+                // page without confirm button
+                await dialogManager.UpdatePage(pageComponent);
+            }
+
+            const userInteraction = await dialogManager.WaitForInteraction();
+            
+            // user consents
+            if (userInteraction?.interactionType === "button" && userInteraction?.interactionID === "confirm") {
+                if (chosenCredential) break;
+            }
+            // user chose a credential from the dropdown
+            else if (userInteraction?.interactionType === "input" && userInteraction?.interactionID === "credential-selection-dropdown") {
+                // get the contents of the dropdown
+                const contents = await dialogManager.GetFormContents();
+
+                chosenCredential = undefined;
+
+                if (contents["credential-selection-dropdown"] !== "none") {
+                    for (let i = 0; i < credentials.length; i++) {
+                        if (credentials[i]?.uuid === contents["credential-selection-dropdown"]) {
+                            chosenCredential = credentials[i];
+                            break;
+                        }
+                    }
+                }
+            }
+            // return if user rejects prompt
+            else {
+                return {
+                    success: false,
+                    message: ERROR_USER_REJECTED
+                }
+            }
+        }
+
+        // display a loading wheel
+        await dialogManager.ShowLoadingPage();
 
         // read values from the storage object we received
         const wallerPrivateKey = storageContents.did.privateKey;
-        const vc = storageContents.did.vc;
+        const vc = chosenCredential.vc;
+        const credentialType = chosenCredential.type;
 
         // Create an EthrDID object for the issuer
         const wallet = new ethers.Wallet(wallerPrivateKey, provider);
@@ -223,7 +497,8 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
                 '@context':['https://www.w3.org/2018/credentials/v1'],
                 type: ['VerifiablePresentation'],
                 verifiableCredential: [vc],
-                challenge
+                challenge,
+                credentialType
             }
         };
 
@@ -233,16 +508,415 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) {
             holderDid
         );
 
+        // display a confirmation alert
+        await dialogManager.UpdatePage(
+            <Box>
+                <Box center={true}>
+                    <Heading>
+                        Credential Presented Successfully
+                    </Heading>
+                </Box>
+                <Divider/>
+                <CredentialCard verifiableCredential={chosenCredential}/>
+            </Box>
+        );
+
+        // wait for the user to close the dialog
+        await renderProcess;
+
         return {
             success: true,
             vp: signedPresentationJwt
         }
     }
     catch (error) {
-        console.log(error)
+        console.error(error);
         return {
             success: false,
-            message: "runtime error",
+            message: ERROR_RUNTIME,
+        }
+    }
+}
+
+/**
+ * Allows the user to manage their stored Verifiable Credentials (VCs), including editing, deleting, or recovering them.
+ * Displays a dialog with the list of credentials, allowing the user to interact with each credential (e.g., edit name, delete, or recover).
+ * 
+ * @returns {Promise<{success: boolean, message?: string}>} A promise resolving to the result of the VC management operation.
+ *    - success: true if changes were successfully applied (e.g., credentials edited, deleted, or recovered).
+ *    - success: false with an error message if the operation failed (e.g., no DID stored, user rejected dialog).
+ */
+export async function snapManageVCs() : Promise<{ success: boolean; message?: string; }> {
+    try  {
+        // get current state of snap secure storage
+        const storageContents = await getSnapStorage();
+            
+        // verify data is formatted correctly
+        if (!storageContents) {
+            return {
+                success: false,
+                message: ERROR_NO_DID
+            }
+        }
+    
+        // create a new dialog window
+        await dialogManager.NewDialog();
+    
+        // create the process to render the window
+        const renderProcess = dialogManager.Render();
+
+        // note: we use a list instead of a dictionary since its easier handle
+        //       the overhead of having to loop through the list to find an element doesn't matter
+        //       since users will usually only store 1-5 credentials 
+        const credentials = await getCredentialsContentList(storageContents.did.credentials);
+
+        let editingCredentialID : string | null | undefined;
+
+        let reRender = true;
+
+        while (true) {
+            if (reRender) {
+                dialogManager.UpdatePage(
+                    <Container>
+                        <Box>
+                            <Box center={true}>
+                                <Heading>Credentials</Heading>
+                            </Box>
+                            <Divider />
+                            {
+                                credentials.length > 0 ? credentials.map((item,index) => (
+                                    editingCredentialID === item.uuid ?
+                                    <CredentialCard // card that is currently being edited
+                                        verifiableCredential={item}
+                                        doCustomHeader
+                                        customHeader={
+                                            <Input name={`credential-name-input-${item.uuid}`} placeholder={"New Credential Name"} value={item.name as string}/>
+                                        }
+                                        doButtonRow
+                                        buttonRowLeft={(
+                                            <Button name={`cancel-${item.uuid}`}>Cancel</Button>
+                                        )}
+                                        buttonRowMiddle={(
+                                            <Button name={`delete-${item.uuid}`} variant='destructive'>Delete</Button>
+                                        )}
+                                        buttonRowRight={(
+                                            <Button name={`done-${item.uuid}`}>Done</Button>
+                                        )}
+                                    />
+                                    : item.deleted ?
+                                    <CredentialCard // deleted card with recover button
+                                        verifiableCredential={item}
+                                        doButtonRow
+                                        doCustomHeader
+                                        customHeader={
+                                            <TripleRow 
+                                                left={
+                                                    <Text color="error"><Bold>{item.name as string}</Bold></Text>
+                                                } 
+                                                middle={null} 
+                                                right={
+                                                    <Text color="error"><Italic>deleted</Italic></Text>
+                                                }
+                                            />
+                                        }
+                                        buttonRowRight={(
+                                            <Button name={`recover-${item.uuid}`}>Recover</Button>
+                                        )}
+                                    />
+                                    : item.edited ?
+                                    <CredentialCard // deleted card with recover button
+                                        verifiableCredential={item}
+                                        doButtonRow
+                                        doCustomHeader
+                                        customHeader={
+                                            <TripleRow 
+                                                left={
+                                                    <Text color="alternative"><Italic>{item.name as string}</Italic></Text>
+                                                } 
+                                                middle={null} 
+                                                right={
+                                                    <Text color="alternative"><Italic>edited</Italic></Text>
+                                                }
+                                            />
+                                        }
+                                        buttonRowRight={(
+                                            <Button name={`recover-${item.uuid}`}>Restore</Button>
+                                        )}
+                                    />
+                                    :
+                                    <CredentialCard // default card with edit button
+                                        verifiableCredential={item}
+                                        doButtonRow
+                                        buttonRowRight={(
+                                            <Button name={`edit-${item.uuid}`}>Edit</Button>
+                                        )}
+                                    />
+                                )) : (<Text>You have no credentials stored right now</Text>)
+                            }
+                        </Box>
+                        <Footer>
+                            <Button type="button" name="confirm" form="userInfoForm">
+                            Save
+                            </Button>
+                        </Footer>
+                    </Container>
+                );
+            }
+
+            reRender = true;
+
+            // wait for user interaction
+            const userInteraction = await dialogManager.WaitForInteraction();
+            
+            // user selects a credential to edit
+            if (userInteraction?.interactionType === "button" && userInteraction?.interactionID.startsWith("edit")) {
+                const selectedCredentialID = userInteraction?.interactionID.replace("edit-","");
+
+                console.log("Start editing");
+
+                // select the credential to open the editing panel
+                editingCredentialID = selectedCredentialID;
+            }
+            // user wants to cancel their edit
+            else if (userInteraction?.interactionType === "button" && userInteraction?.interactionID.startsWith("cancel")) {
+                const selectedCredentialID = userInteraction?.interactionID.replace("cancel-","");
+
+                console.log("Cancel editing");
+                
+                // deselect the credential, to close editing panel
+                editingCredentialID = null;
+            }
+            // user wants to delete the credential
+            else if (userInteraction?.interactionType === "button" && userInteraction?.interactionID.startsWith("delete")) {
+                const selectedCredentialID = userInteraction?.interactionID.replace("delete-","");
+
+                console.log("Delete credential");
+
+                // set the 'deleted' flag in the credential
+                for (let i = 0; i < credentials.length; i++) {
+                    const credential = credentials[i];
+                    if (!credential) break;
+                    
+                    if (credential.uuid === selectedCredentialID) {
+                        credential.deleted = true;
+
+                        credentials[i] = credential;
+
+                        break;
+                    }
+                }
+
+                // deselect the credential, to close editing panel
+                editingCredentialID = null;
+            }
+            // user wants to finish editing
+            else if (userInteraction?.interactionType === "button" && userInteraction?.interactionID.startsWith("done")) {
+                const selectedCredentialID = userInteraction?.interactionID.replace("done-","");
+
+                console.log("Done editing credential");
+
+                // get the contents of the text box
+                const contents = await dialogManager.GetFormContents();
+
+                const name = contents[`credential-name-input-${selectedCredentialID}`] as string;
+
+                // close the editing panel if name is valid
+                if (name.length >= 3) {
+                    for (let i = 0; i < credentials.length; i++) {
+                        const credential = credentials[i];
+                        if (!credential) break;
+                        
+                        if (credential.uuid === selectedCredentialID) {
+                            credential.name = name;
+                            credential.edited = true;
+
+                            credentials[i] = credential;
+
+                            break;
+                        }
+                    }
+
+                    // deselect the credential, to close editing panel
+                    editingCredentialID = null;
+                };
+                // TODO: better user feedback for invalid names
+            }
+            else if (userInteraction?.interactionType === "button" && userInteraction?.interactionID.startsWith("recover")) {
+                const selectedCredentialID = userInteraction?.interactionID.replace("recover-","");
+
+                console.log("Recover credential");
+                
+                // set the 'deleted' flag in the credential
+                for (let i = 0; i < credentials.length; i++) {
+                    const credential = credentials[i];
+                    if (!credential) break;
+                    
+                    if (credential.uuid === selectedCredentialID) {
+                        credential.deleted = false;
+                        credential.edited = false;
+                        credential.name = credential.oldName as string;
+
+                        credentials[i] = credential;
+
+                        break;
+                    }
+                }
+            }
+            // user saves the changes
+            else if (userInteraction?.interactionType === "button" && userInteraction?.interactionID === "confirm") {
+                break;
+            }
+            else if (userInteraction?.interactionType === "input") {
+                // don't need to rerender if the text box is used
+                reRender = false;
+            }
+            // return if user rejects prompt
+            else {
+                return {
+                    success: false,
+                    message: ERROR_USER_REJECTED
+                }
+            }
+        }
+
+        // save changes
+        let updatedCredentials = [];
+        for (let i = 0; i < credentials.length; i++) {
+            const credentialContents = credentials[i];
+            if (!credentialContents) continue;
+
+            if (credentialContents.deleted) continue;
+
+            const credential = storageContents.did.credentials[i];
+            if (!credential) continue;
+
+            credential.name = credentialContents.name as string;
+            updatedCredentials.push(credential);
+        }
+
+        storageContents.did.credentials = updatedCredentials;
+        await setSnapStorage(storageContents);
+        
+        await dialogManager.UpdatePage(
+            <Box center={true}>
+                <Heading>
+                    Changes Saved
+                </Heading>
+            </Box>
+        );
+
+        // wait for the user to close the dialog
+        await renderProcess;
+
+        return {
+            success: true,
+        }
+    }
+    catch (error) {
+        console.error(error);
+        return {
+            success: false,
+            message: ERROR_RUNTIME,
+        }
+    }
+}
+
+// TODO: finish method
+export async function snapExportIdentity() {
+    // create a new dialog window
+    await dialogManager.NewDialog();
+    
+    // create the process to render the window
+    const renderProcess = dialogManager.Render();
+
+    await dialogManager.UpdatePage(
+        <Box center={true}>
+            <Heading>
+                Export Identity
+            </Heading>
+            <Divider/>
+            <Text><Italic>Unfinished method</Italic></Text>
+        </Box>
+    );
+
+    // wait for the user to close the dialog
+    await renderProcess;
+
+    return {
+        success: true,
+    }
+}
+
+// TODO: finish method
+export async function snapImportIdentity() {
+    // create a new dialog window
+    await dialogManager.NewDialog();
+    
+    // create the process to render the window
+    const renderProcess = dialogManager.Render();
+
+    await dialogManager.UpdatePage(
+        <Box center={true}>
+            <Heading>
+                Import Identity
+            </Heading>
+            <Divider/>
+            <Text><Italic>Unfinished method</Italic></Text>
+        </Box>
+    );
+
+    // wait for the user to close the dialog
+    await renderProcess;
+
+    return {
+        success: true,
+    }
+}
+
+/**
+ * Retrieves all stored Verifiable Credentials (VCs) from Snap's secure storage.
+ * Returns a list of all credentials associated with the stored DID.
+ * 
+ * @returns {Promise<{success: boolean, credentials?: Array<Object>, message?: string}>} A promise resolving to the list of credentials or a failure message.
+ *    - success: true with the list of credentials.
+ *    - success: false with an error message if the operation failed (e.g., no DID stored).
+ */
+export async function snapGetAllCredentials() : Promise<{ success: boolean; credentials?: Array<object>; message?: string; }> {
+    try {
+        const storageContents = await getSnapStorage();
+    
+        if (!storageContents) {
+            return {
+                success: false,
+                message: ERROR_NO_DID
+            }
+        }
+    
+        const credentials = (await getCredentialsContentList(storageContents.did.credentials)).map(
+            credential => {
+                return {
+                    vc: credential.vc,
+                    name: credential.name,
+                    uuid: credential.uuid,
+                    type: credential.type,
+                    claim: credential.claim,
+                    issuer: credential.issuer,
+                    subject: credential.subject,
+                    claimString: credential.claimString,
+                }
+            }
+        );
+
+        return {
+            success: true,
+            credentials
+        } as AllCredentials
+    }
+    catch (error) {
+        console.error(error)
+        return {
+            success: false,
+            message: ERROR_RUNTIME,
         }
     }
 }

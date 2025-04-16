@@ -15,6 +15,7 @@ const config: SnapConfig = {
   },
   environment: {
     INFURA_PROJECT_ID: process.env.INFURA_PROJECT_ID,
+    COMPANION_APP_ORIGIN: process.env.COMPANION_APP_ORIGIN,
   },
 };
 

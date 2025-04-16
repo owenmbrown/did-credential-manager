@@ -1,7 +1,10 @@
 import type { OnRpcRequestHandler } from '@metamask/snaps-sdk';
-import { Box, Text, Bold, Heading } from '@metamask/snaps-sdk/jsx';
+import { Box, Text, Bold } from '@metamask/snaps-sdk/jsx';
 
-import { snapCreateDID, snapGetDid, snapGetVP, snapStoreVC } from './snap-methods'
+import { snapCreateDID, snapExportIdentity, snapGetAllCredentials, snapGetDid, snapGetVP, snapImportIdentity, snapManageVCs, snapStoreVC } from './snap-methods'
+import { onUserInput } from './snap-methods'
+
+const COMPANION_APP_ORIGIN = process.env.COMPANION_APP_ORIGIN
 
 /**
  * Handle incoming JSON-RPC requests, sent through `wallet_invokeSnap`.
@@ -17,6 +20,16 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
     origin,
     request,
 }) => {
+    // companion app only method
+    if (['create-did','manage-vcs','export-identity','import-identity','get-all-vc'].includes(request.method)) {
+        if (origin !== COMPANION_APP_ORIGIN) {
+            return {
+                success: false,
+                message: "you don't have permission to use this method"
+            }
+        }
+    }
+
     switch (request.method) {
         case 'hello':
             return await snap.request({
@@ -36,6 +49,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
                 },
             });
         case 'create-did': // creates a new did:ethr and stores it in snap storage
+            // companion app only method
             const response = await snapCreateDID();
 
             return response;
@@ -54,7 +68,35 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
 
             return response;
         }
+        case 'manage-vcs': {
+            // companion app only method
+            const response = await snapManageVCs();
+
+            return response;
+        }
+        case 'export-identity': {
+            // companion app only method
+            const response = await snapExportIdentity();
+
+            return response;
+        }
+        case 'import-identity': {
+            // companion app only method
+            const response = await snapImportIdentity();
+
+            return response;
+        }
+        case 'get-all-vcs': {
+            // companion app only method
+            const response = await snapGetAllCredentials();
+
+            console.log(response);
+
+            return response;
+        }
         default:
             throw new Error('Method not found.');
     }
 };
+
+export { onUserInput };

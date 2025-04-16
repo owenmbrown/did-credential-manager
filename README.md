@@ -26,6 +26,13 @@ Issues a Verifiable Credential (VC) with a claim about a subject
 # MetaMask Snap RPC Methods
 This MetaMask Snap provides several RPC methods that interact with a decentralized identity (DID) and verifiable credentials (VC):
 
+## Setup
+1. Add `.env` to snap/packages/snap
+  ```
+  INFURA_PROJECT_ID="..."
+  COMPANION_APP_ORIGIN="http://localhost:8000"
+  ```
+2. Install dependencies `yarn install`
 ## Running
 ### Running snap & example frontend
 This will start the snap and the example frontend implementation to interact with it
@@ -38,6 +45,9 @@ This will start just the snap
 
 ## `create-did`
 This method generates a new Decentralized Identifier (DID) of type `did:ethr` by creating a new Ethereum wallet. It stores the new DID (in the form of the wallet's address and private key) in the Snap's secure storage for future use. A dialog is displayed confirming the creation of the DID.
+
+Note: This method is restricted to the companion app only.
+
 ### Usage
 ```
 await invokeSnap({
@@ -56,12 +66,13 @@ Can fail if the user rejects the dialogue
 ```
 {
   "success": false,
-  "message": "some message about the failure"
+  "message": "user rejected dialogue"
  }
 ```
 
 ## `get-did`
-This method retrieves the `did:ethr` stored in Snap’s secure storage. If no DID has been created or stored yet, it returns an empty string
+This method retrieves the `did:ethr` stored in the Snap’s secure storage. If no DID has been created or stored yet, it returns a failure message.
+
 ### Usage
 ```
 const result = await invokeSnap({
@@ -81,45 +92,147 @@ Can fail if the did isn't stored
 ```
 {
   "success": false,
-  "message": "some message about the failure"
+  "message": "no did is stored"
  }
 ```
 
 ## `store-vc`
-This method stores a Verifiable Credential (VC) associated with the current DID in Snap's secure storage. The VC is passed as a parameter and is associated with the DID. If no DID is found in the storage, the method will display an alert informing the user that no DID exists. A confirmation dialog is shown upon successfully storing the VC.
+This method stores a Verifiable Credential (VC) associated with the current DID in Snap's secure storage. The VC is passed as a parameter and is associated with the DID. If no DID is found in the storage, the method will display an alert informing the user that no DID exists.
 ### Usage
 ```
 await invokeSnap({
   method: 'store-vc',
-  params: { vc: "your-verifiable-credential" }
+  params: {
+    vc: "your-verifiable-credential",
+    type: "credential-type",
+    defaultName: "credential name"
+  }
 });
 ```
 ### Response
-Doesn't return anything.
+Returns success:
+```
+{
+  "success": true,
+ }
+```
+Can fail if required parameters are missing:
+```
+{
+  "success": false,
+  "message": "missing params: [vc, type, defaultName]"
+}
+```
+Can fail if no DID is stored:
+```
+{
+  "success": false,
+  "message": "no did is stored"
+}
+```
 
 ## `get-vp`
 This method generates a Verifiable Presentation (VP) by signing the stored Verifiable Credential (VC) with the DID’s private key. The method takes a `challenge` as a parameter and creates a VP containing the VC and the provided challenge. If the challenge is missing or no VC is stored in the Snap, an alert is shown to the user.
+
 ### Usage
 ```
 await invokeSnap({
   method: 'get-vp',
-  params: { challenge: "unique-challenge-string" }
+  params: {
+    challenge: "unique-challenge-string",
+    validTypes: ["credential-type"]
+  }
 });
 ```
 ### Response
-Returns the signed JWT representing the Verifiable Presentation. If any issue occurs (e.g., missing challenge or missing VC), an alert is shown.
+Returns the signed JWT representing the Verifiable Presentation.
 ```
 {
   "success": true,
   "vp": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2cCI6eyJjYXRhbCI6Imh0dHBzOi8vZGVzY3JpcH..."} 
 }
 ```
-Can fail if the user rejects the dialogue, or if no challenge is included, or if the vc isn't stored
+Can fail if the challenge or required valid types are missing, or if no VC is stored:
 ```
 {
   "success": false,
-  "message": "some message about the failure"
- }
+  "message": "missing params: [challenge, validTypes]"
+}
+```
+Can fail if no DID is stored:
+```
+{
+  "success": false,
+  "message": "no did is stored"
+}
+```
+
+## `manage-vcs`
+This method allows the user to manage their stored Verifiable Credentials (VCs), including editing, deleting, or recovering them. The user can interact with a list of credentials and perform actions such as editing the credential name or deleting a credential. The method also supports recovering deleted credentials.
+
+Note: This method is restricted to the companion app only.
+
+### Usage
+```
+await invokeSnap({
+  method: 'manage-vcs'
+});
+```
+
+### Response
+Returns a success message when the management process is complete.
+```
+{
+  "success": false,
+  "message": "no did is stored"
+}
+```
+Can fail if no DID is stored:
+```
+{
+  "success": false,
+  "message": "user rejected dialogue"
+}
+```
+
+## `get-all-vc`
+This method retrieves all Verifiable Credentials (VCs) stored in the Snap’s secure storage. It returns a list of credentials associated with the stored DID.
+
+Note: This method is restricted to the companion app only.
+
+### Usage
+```
+await invokeSnap({
+  method: 'get-all-vc'
+});
+```
+
+### Response
+Returns a list of credentials.
+```
+{
+  "success": true
+  "credentials": [
+    {
+      "vc": "credential-data",
+      "name": "credential-name",
+      "uuid": "credential-uuid",
+      "type": "credential-type",
+      "claim": "claim-data",
+      "issuer": "issuer-info",
+      "subject": "subject-info",
+      "claimString": "claim-string"
+    }
+  ]
+}
+```
+Can fail if no DID is stored:
+```
+{
+  "success": false,
+  "message": "no did is stored"
+}
+
 ```
 
 

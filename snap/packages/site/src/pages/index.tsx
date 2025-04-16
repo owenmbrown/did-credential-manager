@@ -128,17 +128,57 @@ const Index = () => {
   const handleSendStoreVC = async () => {
     const result = await invokeSnap({
       method: 'store-vc',
-      params: { vc: "eyJhbGciOiJFUzI1NkstUiIsInR5cCI6IkpXVCJ9.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImFnZSI6MjV9fSwic3ViamVjdCI6ImRpZDpldGhyOjB4ZmU0NTY4MDM4NzU5YjczOUQ2ZWJFMDVhMDM0NTNiNmM5ODlENzFlMyIsIm5iZiI6MTc0MjQyNDcyMywiaXNzIjoiZGlkOmV0aHI6MHhmZTQ1NjgwMzg3NTliNzM5RDZlYkUwNWEwMzQ1M2I2Yzk4OUQ3MWUzIn0.dko-li1KduwZ2FUPP4wqb3WDCB6nefgKny8WtwXp8rB6sK4xXHd2pGJCjGvrbFT2yaVEMjw-DMrJUf9xW7sFBAA" }
+      params: { 
+        vc: "eyJhbGciOiJFUzI1NkstUiIsInR5cCI6IkpXVCJ9.eyJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImFnZSI6MjV9fSwic3ViamVjdCI6ImRpZDpldGhyOjB4NzE1NTcwNTVCN0IxNWIwNDY3MTQ1MzM2NEZBMzMwNDc0MTRGMTk4RiIsIm5iZiI6MTc0MzQ1MjgwNSwiaXNzIjoiZGlkOmV0aHI6MHhmZTQ1NjgwMzg3NTliNzM5RDZlYkUwNWEwMzQ1M2I2Yzk4OUQ3MWUzIn0.DJNHMHgeyCmZHv9qymcKHGTpXTOXz7U61qIko_LtKFESdiMij8wynpL_OlnY9-NAvEfBu_VRZpShl2gsAGGWBwE" ,
+        type: "age-demo-credential",
+        defaultName: "Age Demo Credential"
+      }
     });
     console.log(result);
   };
   const handleSendGetVP = async () => {
     const result = await invokeSnap({
       method: 'get-vp',
-      params: { challenge: "12345" }
-  });
+      params: {
+        challenge: "12345",
+        validTypes: [ "age-demo-credential" ] // string or array of strings
+      }
+    });
+
     console.log(result)
   };
+
+  const handleSendManageVCs = async () => {
+    const result = await invokeSnap({
+      method: 'manage-vcs',
+    });
+
+    console.log(result);
+  };
+  
+  const handleSendExportIdentity = async () => {
+    const result = await invokeSnap({
+      method: 'export-identity',
+    });
+  
+    console.log(result);
+  }
+
+  const handleSendImportIdentity = async () => {
+    const result = await invokeSnap({
+      method: 'import-identity',
+    });
+  
+    console.log(result);
+  }
+
+  const handleSendGetAllCredentials = async () => {
+    const result = await invokeSnap({
+      method: 'get-all-vcs',
+    });
+  
+    console.log(result);
+  }
 
   return (
     <Container>
@@ -287,6 +327,86 @@ const Index = () => {
                 onClick={handleSendGetVP}
                 disabled={!installedSnap}
                 ButtonText="Get VP"
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Manage Credentials',
+            description:
+              'Manage your stored verifiable credentials',
+            button: (
+              <SendHelloButton
+                onClick={handleSendManageVCs}
+                disabled={!installedSnap}
+                ButtonText="Manage"
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Export Identity',
+            description:
+              'Export your identity to import to another instance of your wallet',
+            button: (
+              <SendHelloButton
+                onClick={handleSendExportIdentity}
+                disabled={!installedSnap}
+                ButtonText="Export"
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Import Identity',
+            description:
+              'Import your identity from another instance of your wallet',
+            button: (
+              <SendHelloButton
+                onClick={handleSendImportIdentity}
+                disabled={!installedSnap}
+                ButtonText="Import"
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Get All VCs',
+            description:
+              'Get all credentials from the wallet',
+            button: (
+              <SendHelloButton
+                onClick={handleSendGetAllCredentials}
+                disabled={!installedSnap}
+                ButtonText="Get"
               />
             ),
           }}
