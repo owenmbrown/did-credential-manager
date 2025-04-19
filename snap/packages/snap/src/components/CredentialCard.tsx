@@ -37,7 +37,25 @@ function renderMultilineText(content: string) {
     ));
 }
 
-
+/**
+ * A component that displays the contents of a Verifiable Credential (VC) in a card-style layout.
+ *
+ * The card includes the credential's name (or a fallback title), issuer and subject DIDs, and a formatted claim string.
+ * Optionally, you can customize the header and add an action button row using the provided props.
+ *
+ * @param verifiableCredential - The credential object to display, including:
+ *   - `vc`: The raw VC JWT string.
+ *   - `name`: A display label for the credential.
+ *   - `issuer`: The DID of the credential issuer.
+ *   - `subject`: The DID of the credential subject (typically the user).
+ *   - `claimString`: A formatted string describing the claims.
+ * @param doCustomHeader - Whether to render a custom header instead of the default name heading.
+ * @param customHeader - A custom JSX element to render as the card's header.
+ * @param doButtonRow - Whether to show the action button row at the bottom of the card.
+ * @param buttonRowLeft - JSX content for the left button slot.
+ * @param buttonRowMiddle - JSX content for the center button slot.
+ * @param buttonRowRight - JSX content for the right button slot.
+ */
 export const CredentialCard: SnapComponent<CredentialCardProps> = ({ 
     verifiableCredential,
     doCustomHeader = false,

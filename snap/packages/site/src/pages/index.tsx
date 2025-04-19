@@ -145,7 +145,7 @@ const Index = () => {
       }
     });
 
-    console.log(result)
+    console.log(result);
   };
 
   const handleSendManageVCs = async () => {

@@ -6,9 +6,18 @@ type InclusiveRowProps = {
     
     // the content to display on the right side of the row
     children: any;
-  };
+};
   
-// a custom row component that mimics the MetaMask Row component, but allows any content
+/**
+ * A custom UI row component for Snap dialogs that mimics MetaMask's `Row` component,
+ * but allows rendering any arbitrary Snap content on the right side.
+ *
+ * Typically used for displaying key-value pairs where the left side is a label
+ * and the right side can be text, buttons, inputs, or other components.
+ *
+ * @param label - The label displayed on the left side of the row.
+ * @param children - The custom content rendered on the right side of the row.
+ */
 export const InclusiveRow: SnapComponent<InclusiveRowProps> = ({ 
     label, 
     children,

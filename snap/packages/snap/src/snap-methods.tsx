@@ -5,9 +5,8 @@ import { createVerifiablePresentationJwt, Issuer, JwtPresentationPayload } from 
 import { EthrDID } from 'ethr-did';
 
 import { getSnapStorage, setSnapStorage, DialogManager, getCredentialContents, getCredentialsContentList, ERROR_NO_DID, ERROR_USER_REJECTED, ERROR_RUNTIME } from './snap-helpers';
-import { StoreVCParams, GetVPParams, CredentialContents, AllCredentials } from './types'
-import { CredentialCard } from './components'
-import { TripleRow } from './components/TripleRow';
+import { StoreVCParams, GetVPParams, CredentialContents, AllCredentials } from './types';
+import { CredentialCard, TripleRow } from './components';
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 
@@ -17,6 +16,16 @@ const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${INFU
 // initalize dialog manager
 let dialogManager = new DialogManager();
 
+/**
+ * Handles user input events from Snap interfaces and routes them to the `DialogManager`.
+ *
+ * This function is triggered whenever the user interacts with a Snap-rendered UI,
+ * such as clicking a button or changing a dropdown/input field. It updates the internal
+ * interaction state within the `DialogManager` so that logic waiting on `WaitForInteraction()` can proceed.
+ *
+ * @param id - The ID of the interface the event originated from.
+ * @param event - The user input event, which can be a button click or input change.
+ */
 export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
     if (event.type === UserInputEventType.ButtonClickEvent) {
         dialogManager.UseButton(event.name,id);
@@ -27,12 +36,25 @@ export const onUserInput: OnUserInputHandler = async ({ id, event }) => {
 }
 
 /**
- * Creates a new Decentralized Identifier (DID) of type `did:ethr` and stores it in Snap's secure storage.
- * Prompts the user for confirmation before creating the DID, and displays a success dialog with the DID address.
- * 
- * @returns {Promise<{success: boolean, did?: string, message?: string}>} A promise resolving to the result of the DID creation attempt.
- *    - success: true if the DID was successfully created and stored.
- *    - success: false with an error message if the operation failed (e.g., user rejected dialog).
+ * Creates and stores a new Decentralized Identifier (DID) of type `did:ethr` in Snap's secure state storage.
+ *
+ * This function guides the user through a multi-step dialog:
+ * - Asks whether to generate a new Ethereum wallet or import an existing one
+ * - Validates the inputted private key (if provided)
+ * - Displays a loading indicator during processing
+ * - Shows a confirmation page upon success
+ *
+ * If an existing key is used, it is validated using ethers.js. If validation fails, the user is prompted again.
+ * The resulting DID is stored along with its private key and an empty list of credentials in Snap storage.
+ *
+ * @async
+ * @returns {Promise<{success: boolean, did?: string, message?: string}>} A result object:
+ * - `success`: true if a DID was successfully created and stored; false otherwise
+ * - `did` (optional): the generated or imported DID (e.g., `did:ethr:0xabc...`)
+ * - `message` (optional): error message if creation failed (e.g., user rejected, runtime error)
+ *
+ * @throws Will return a failed result if user rejects the dialog or an unexpected error occurs.
+ * @sideEffect Renders MetaMask Snap UI dialogs and mutates Snap state via `setSnapStorage()`.
  */
 export async function snapCreateDID() : Promise<{ success: boolean; did?: string; message?: string; }> {
     try {
@@ -166,12 +188,18 @@ export async function snapCreateDID() : Promise<{ success: boolean; did?: string
 }
 
 /**
- * Retrieves the stored `did:ethr` from Snap's secure storage.
- * If no DID has been created or stored, returns a failure message.
- * 
- * @returns {Promise<{success: boolean, did?: string, message?: string}>} A promise resolving to the retrieved DID address or failure message.
- *    - success: true with the stored DID address.
- *    - success: false with an error message if no DID is found.
+ * Retrieves the stored Decentralized Identifier (DID) of type `did:ethr` from Snap's secure storage.
+ *
+ * This function checks Snap state for a previously created or imported DID. If found, the DID's address
+ * is returned. If no DID exists in storage (e.g., user hasn't created one yet), a failure message is returned instead.
+ *
+ * @async
+ * @returns {Promise<{ success: boolean, did?: string, message?: string }>} A result object:
+ * - `success`: true if a DID is found; false if no DID has been created or stored.
+ * - `did` (optional): the stored DID address (e.g., `did:ethr:0xabc...`)
+ * - `message` (optional): an error message indicating no DID was found.
+ *
+ * @sideEffect None. This is a read-only function that retrieves data from Snap's internal state.
  */
 export async function snapGetDid() : Promise<{ success: boolean; did?: string; message?: string; }> {
     // get current state of snap secure storage
@@ -194,17 +222,33 @@ export async function snapGetDid() : Promise<{ success: boolean; did?: string; m
 }
 
 /**
- * Stores a Verifiable Credential (VC) associated with the current DID in Snap's secure storage.
- * Displays a confirmation dialog for the user before storing the VC. If no DID is found, an error message is shown.
- * 
- * @param {JsonRpcRequest<JsonRpcParams>} request The request object containing the VC, type, and default name.
- *    - vc: The Verifiable Credential to store.
- *    - type: The type of the credential.
- *    - defaultName: The default name for the credential.
- * 
- * @returns {Promise<{success: boolean, message?: string}>} A promise resolving to the result of the VC storing operation.
- *    - success: true if the VC was successfully stored.
- *    - success: false with an error message if the operation failed (e.g., user rejected dialog or missing parameters).
+ * Stores a Verifiable Credential (VC) in Snap's secure storage, associating it with the currently stored DID.
+ *
+ * This function performs the following steps:
+ * - Validates the incoming request for required fields: `vc`, `type`, and `defaultName`
+ * - Ensures a DID has been created and is available in Snap storage
+ * - Displays a confirmation dialog for the user, allowing them to rename the credential before storing it
+ * - Validates the credential name (minimum length of 3)
+ * - Persists the credential, including metadata like name, type, and UUID
+ * - Displays a confirmation message once stored
+ *
+ * If any required parameter is missing, or the user cancels the dialog, the operation fails gracefully.
+ *
+ * @param {JsonRpcRequest<JsonRpcParams>} request - The request payload from the calling dApp, containing:
+ * @param {string} request.params.vc - The Verifiable Credential (as a JWT or JSON string)
+ * @param {string} request.params.type - The type/category of the credential (e.g., "EmailCredential", "KYC", etc.)
+ * @param {string} request.params.defaultName - The default name to use for the credential before user edits
+ *
+ * @returns {Promise<{ success: boolean, message?: string }>} A result object:
+ * - `success`: true if the credential was successfully stored
+ * - `message` (optional): An error message if the operation fails
+ *   - Can be caused by missing parameters, user rejection, missing DID, or a runtime error
+ *
+ * @throws Will return a failed result if validation fails, the DID is not found, or the user cancels the prompt.
+ * @sideEffect Renders Snap dialogs for user interaction and mutates Snap state via `setSnapStorage()`.
+ *
+ * @todo Implement better user feedback for invalid credential names
+ * @todo Validate that the address in the VC matches the address in Snap storage
  */
 export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) : Promise<{ success: boolean; message?: string; }> {
     try {
@@ -339,16 +383,37 @@ export async function snapStoreVC(request: JsonRpcRequest<JsonRpcParams>) : Prom
 }
 
 /**
- * Generates a Verifiable Presentation (VP) by signing the stored Verifiable Credential (VC) with the DID's private key.
- * Requires a `challenge` and `validTypes` parameters. If no VC of the valid type is found, an error message is shown.
- * 
- * @param {JsonRpcRequest<JsonRpcParams>} request The request object containing the challenge and valid types.
- *    - challenge: A string used to generate the Verifiable Presentation.
- *    - validTypes: An array of valid credential types that can be used in the presentation.
- * 
- * @returns {Promise<{success: boolean, vp?: string, message?: string}>} A promise resolving to the signed VP JWT or failure message.
- *    - success: true with the signed VP if successful.
- *    - success: false with an error message if the operation failed (e.g., missing parameters, no valid VC, or no DID).
+ * Generates and returns a Verifiable Presentation (VP) JWT from a stored Verifiable Credential (VC).
+ *
+ * This function:
+ * - Requires a challenge string and a list of valid credential types
+ * - Filters the stored credentials based on `validTypes`
+ * - Prompts the user to confirm the presentation of a selected credential via a Snap dialog
+ * - Uses the DID's private key to sign the presentation JWT
+ * - Returns the signed VP if successful
+ *
+ * The Verifiable Presentation includes:
+ * - The selected VC
+ * - The challenge provided
+ * - Metadata for the selected credential (e.g., its type)
+ *
+ * @param {JsonRpcRequest<JsonRpcParams>} request - A JSON-RPC request object containing:
+ * @param {string} request.params.challenge - A challenge string used to bind the VP to the session/requester.
+ * @param {string[]} request.params.validTypes - List of accepted credential types (e.g., `["EmailCredential"]`).
+ *
+ * @returns {Promise<{ success: boolean, vp?: string, message?: string }>} A result object:
+ * - `success`: true if a VP was successfully generated and signed.
+ * - `vp` (optional): the signed Verifiable Presentation as a JWT string.
+ * - `message` (optional): an error message if the operation failed due to:
+ *   - Missing parameters
+ *   - No DID available in storage
+ *   - No matching credential type
+ *   - User rejection or runtime error
+ *
+ * @throws Will return a failed result instead of throwing on user rejection or invalid state.
+ * @sideEffect Renders multiple Snap dialogs for user interaction and reads DID state from secure storage.
+ *
+ * @todo Improve UX feedback when invalid or no credential is selected
  */
 export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) : Promise<{ success: boolean; vp?: string; message?: string; }> {
     try {
@@ -539,12 +604,28 @@ export async function snapGetVP(request: JsonRpcRequest<JsonRpcParams>) : Promis
 }
 
 /**
- * Allows the user to manage their stored Verifiable Credentials (VCs), including editing, deleting, or recovering them.
- * Displays a dialog with the list of credentials, allowing the user to interact with each credential (e.g., edit name, delete, or recover).
- * 
- * @returns {Promise<{success: boolean, message?: string}>} A promise resolving to the result of the VC management operation.
- *    - success: true if changes were successfully applied (e.g., credentials edited, deleted, or recovered).
- *    - success: false with an error message if the operation failed (e.g., no DID stored, user rejected dialog).
+ * Opens a UI flow that allows the user to manage their stored Verifiable Credentials (VCs) in Snap storage.
+ *
+ * This interactive dialog lets the user:
+ * - **Edit** a credential's name
+ * - **Delete** a credential (mark it as deleted)
+ * - **Recover** a previously deleted or edited credential (resetting it to original state)
+ * - **Save** their changes or cancel the operation
+ *
+ * Internally, credentials are marked with temporary flags (`edited`, `deleted`) before the user confirms their changes.
+ * Only when the user confirms (`Save`), these changes are persisted back to Snap secure storage.
+ *
+ * @returns {Promise<{ success: boolean, message?: string }>} A result object:
+ * - `success`: true if changes were successfully saved to Snap storage
+ * - `message` (optional): error message if no DID was found, the user canceled, or a runtime error occurred
+ *
+ * @sideEffect
+ * - Displays an interactive multi-step dialog to the user
+ * - Reads and mutates the Snap state (`setSnapStorage`) if changes are confirmed
+ *
+ * @throws Will return `success: false` instead of throwing for all user-driven cancellations and runtime errors
+ *
+ * @todo Improve feedback when credential name is invalid (e.g., shorter than 3 characters)
  */
 export async function snapManageVCs() : Promise<{ success: boolean; message?: string; }> {
     try  {
@@ -821,7 +902,21 @@ export async function snapManageVCs() : Promise<{ success: boolean; message?: st
     }
 }
 
-// TODO: finish method
+/**
+ * [UNIMPLEMENTED] Placeholder method for exporting the current identity (DID + credentials).
+ *
+ * ⚠️ This method is currently disabled for security reasons:
+ * - MetaMask Snaps do not support secure encryption with the user's wallet key
+ * - Exporting identity data unencrypted would expose users to identity theft if mishandled
+ *
+ * In the future, this method may be implemented if:
+ * 1. MetaMask Flask adds support for encryption/decryption using the user's wallet key
+ * 2. The project decides to expose this feature to advanced users with sufficient warnings
+ *
+ * @returns {Promise<{ success: boolean }>} Always returns success with no actual export behavior.
+ *
+ * @sideEffect Renders an informational dialog stating that export is unfinished.
+ */
 export async function snapExportIdentity() {
     // create a new dialog window
     await dialogManager.NewDialog();
@@ -847,7 +942,21 @@ export async function snapExportIdentity() {
     }
 }
 
-// TODO: finish method
+/**
+ * [UNIMPLEMENTED] Placeholder method for importing a DID-based identity into the Snap.
+ *
+ * ⚠️ This method is not currently implemented due to missing secure channels for identity verification:
+ * - Without encryption tied to the original wallet, imported data could be spoofed or misused
+ * - Implementing this without protections may cause inexperienced users to unknowingly compromise their identity
+ *
+ * This method may be implemented in the future if:
+ * 1. Wallet-linked encryption is supported in MetaMask Snaps
+ * 2. The feature is gated behind an "advanced mode" with appropriate risk disclosures
+ *
+ * @returns {Promise<{ success: boolean }>} Always returns success with no actual import behavior.
+ *
+ * @sideEffect Renders an informational dialog stating that import is unfinished.
+ */
 export async function snapImportIdentity() {
     // create a new dialog window
     await dialogManager.NewDialog();
@@ -874,12 +983,29 @@ export async function snapImportIdentity() {
 }
 
 /**
- * Retrieves all stored Verifiable Credentials (VCs) from Snap's secure storage.
- * Returns a list of all credentials associated with the stored DID.
- * 
- * @returns {Promise<{success: boolean, credentials?: Array<Object>, message?: string}>} A promise resolving to the list of credentials or a failure message.
- *    - success: true with the list of credentials.
- *    - success: false with an error message if the operation failed (e.g., no DID stored).
+ * Retrieves all stored Verifiable Credentials (VCs) associated with the current DID from Snap's secure storage.
+ *
+ * Each credential in the returned list includes both raw and parsed metadata (e.g., name, type, issuer, and claim string).
+ * This function is useful for external applications or UI components that want to display or process all credentials at once.
+ *
+ * Internally, it uses `getCredentialsContentList()` to enrich each stored VC with derived fields such as `claimString`.
+ *
+ * @returns {Promise<{ success: boolean, credentials?: Array<object>, message?: string }>} A result object:
+ * - `success`: true if credentials were successfully retrieved
+ * - `credentials` (optional): an array of enriched credential objects, each containing:
+ *   - `vc`: the original Verifiable Credential (JWT or JSON)
+ *   - `name`: user-defined credential label
+ *   - `uuid`: unique identifier for the credential
+ *   - `type`: type of the credential
+ *   - `claim`: parsed claim object
+ *   - `issuer`: DID of the issuer
+ *   - `subject`: DID of the subject
+ *   - `claimString`: short string representation of the claim
+ * - `message` (optional): an error message if the DID was not found or a runtime error occurred
+ *
+ * @sideEffect None — this is a read-only function.
+ *
+ * @throws Returns `success: false` instead of throwing, even on unexpected errors.
  */
 export async function snapGetAllCredentials() : Promise<{ success: boolean; credentials?: Array<object>; message?: string; }> {
     try {

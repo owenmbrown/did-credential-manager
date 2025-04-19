@@ -12,8 +12,17 @@ type DIDProps = {
     suffixLength?: number;
 };
   
-// a component that displays a truncated DID with the full DID shown on hover.
-// similar to the Address component but specialized for DIDs.
+/**
+ * A UI component for displaying a truncated Decentralized Identifier (DID),
+ * with the full DID revealed on hover via a tooltip.
+ *
+ * This behaves similarly to an address display component, but is specialized for `did:ethr` or similar DID formats.
+ * Useful when displaying long identifiers in a compact UI while retaining accessibility to the full string.
+ *
+ * @param did - The full DID string to display (e.g., `did:ethr:0x1234567890abcdef...`).
+ * @param prefixLength - (Optional) Number of characters to show at the beginning before truncation. Defaults to 13.
+ * @param suffixLength - (Optional) Number of characters to show at the end after truncation. Defaults to 4.
+ */
 export const DID: SnapComponent<DIDProps> = ({ 
     did, 
     prefixLength = 13,
