@@ -132,7 +132,20 @@ const LoginPage = () => {
           }
           login({
             name: credentialSubject.name || 'Bank Customer',
+            address: credentialSubject.address || '123 Main St',
             licenseNumber: credentialSubject.licenseNumber || '',
+          });
+          await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              licenseNumber: credentialSubject.licenseNumber, // or another unique identifier
+              firstName: credentialSubject.name.split(' ')[0],
+              lastName: credentialSubject.name.split(' ')[1] || '',
+              address: credentialSubject.address || '123 Main St',
+            }),
           });
           router.push('/account');
         } catch (verifyError) {
@@ -182,6 +195,7 @@ const LoginPage = () => {
         </button>
         <div className="text-center mt-4"></div>
       </div>
+      <Head />
       <Sidebar />
     </div>
   );
