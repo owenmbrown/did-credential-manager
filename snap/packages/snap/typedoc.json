@@ -1,0 +1,12 @@
+{
+    "entryPoints": ["src/**/*.ts", "src/**/*.tsx"],
+    "entryPointStrategy": "expand",
+    "out": "docs",
+    "includeVersion": true,
+    "excludePrivate": true,
+    "excludeInternal": true,
+    "excludeExternals": true,
+    "excludeNotDocumented": false,
+    "tsconfig": "tsconfig.json"
+}
+  
