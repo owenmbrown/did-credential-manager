@@ -28,6 +28,8 @@
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
-    "@types/jsonwebtoken": "^9.0.9"
+    "@types/jsonwebtoken": "^9.0.9",
+    "typedoc-plugin-missing-exports": "^4.0.0",
+    "typedoc-plugin-not-exported": "^0.1.6"
   }
 }
