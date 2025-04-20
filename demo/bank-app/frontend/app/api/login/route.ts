@@ -1,6 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db'; // your MySQL pool/connection
 
+/**
+ * POST /api/login
+ *
+ * Simulates a user login by creating a user (if not already existing), two accounts (checking & savings),
+ * and a few sample transactions per account.
+ *
+ * This is intended for demo/testing purposes to quickly populate the database with realistic user data.
+ *
+ * @param req - The Next.js request object containing a JSON body with:
+ *   - `licenseNumber` (string): unique identifier for the user
+ *   - `firstName` (string)
+ *   - `lastName` (string)
+ *   - `address` (string)
+ *
+ * @returns A JSON response with a success message or a 500 error if any operation fails.
+ *
+ * @example
+ * Request:
+ * ```json
+ * {
+ *   "licenseNumber": "123456",
+ *   "firstName": "Alice",
+ *   "lastName": "Smith",
+ *   "address": "123 Main St"
+ * }
+ * ```
+ *
+ * Response:
+ * ```json
+ * {
+ *   "message": "Logged in successfully"
+ * }
+ * ```
+ *
+ * @remarks
+ * - If the user already exists, no new row will be inserted (`INSERT IGNORE`).
+ * - The two created accounts are labeled `"Checking"` and `"Savings"`.
+ * - Each account gets between 2–5 random transactions.
+ * - Final account balances are updated after transaction simulation.
+ */
 export async function POST(req: NextRequest) {
   try {
     // You can also parse request body if needed

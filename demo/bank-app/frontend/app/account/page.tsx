@@ -41,7 +41,7 @@ const AccountPage = () => {
 
           async function fetchAccounts() {
             try {
-              const res = await fetch(`/api/account?licenseNumber=${userInfo.licenseNumber}`, {
+              const res = await fetch(`/api/account?licenseNumber=${userInfo?.licenseNumber}`, {
                 method: 'GET',
               });
               const data = await res.json();

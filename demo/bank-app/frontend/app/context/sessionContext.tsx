@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface UserInfo {
   name: string;
-  address: string;
+  address?: string;
   licenseNumber: string;
   [key: string]: any; // Allow additional properties
 }

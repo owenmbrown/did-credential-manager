@@ -9,7 +9,8 @@ const SNAP_ID = 'local:http://localhost:8080';
 
 type VPResponse = {
   success: boolean,
-  vp: string
+  vp: string,
+  message: string | null
 }
 
 const LoginPage = () => {
@@ -24,7 +25,7 @@ const LoginPage = () => {
     try {
       setIsConnecting(true);
       setStatusMessage('Connecting to Digital ID service...');
-      await window.ethereum.request({
+      await (window as any).ethereum.request({
         method: 'wallet_requestSnaps',
         params: {
           [SNAP_ID]: {}
@@ -33,7 +34,9 @@ const LoginPage = () => {
       setStatusMessage('Connected to Digital ID service');
       return true;
     } catch (error) {
-      setErrorMessage(`Failed to connect to Digital ID service: ${error.message}`);
+      if (error instanceof Error) {
+        setErrorMessage(`Failed to connect to Digital ID service: ${error.message}`);
+      }
       return false;
     } finally {
       setIsConnecting(false);
@@ -41,7 +44,7 @@ const LoginPage = () => {
   };
 
   useEffect(() => {
-    if (window.ethereum) {
+    if ((window as any).ethereum) {
       connectToSnap();
     }
   }, []);
@@ -53,7 +56,7 @@ const LoginPage = () => {
       setErrorMessage('');
       setStatusMessage('Verifying your Digital ID...');
       
-      if (!window.ethereum) {
+      if (!(window as any).ethereum) {
         setErrorMessage('MetaMask is not installed. Please install MetaMask to continue.');
         return;
       }
@@ -64,7 +67,7 @@ const LoginPage = () => {
       }
       
       try {
-        const snaps = await window.ethereum.request({
+        const snaps = await (window as any).ethereum.request({
           method: 'wallet_getSnaps',
         });
         
@@ -105,7 +108,7 @@ const LoginPage = () => {
       try {
         console.log("Requesting VP with challenge:", challenge);
         
-        const vpResponse = await window.ethereum.request({
+        const vpResponse = await (window as any).ethereum.request({
           method: 'wallet_invokeSnap',
           params: {
             snapId: SNAP_ID,
@@ -181,10 +184,20 @@ const LoginPage = () => {
           throw new Error('Failed to verify credential presentation.');
         }
       } catch (vpError) {
-        throw new Error(vpError.message || 'Failed to get verifiable presentation.');
+        if (vpError instanceof Error) {
+          throw new Error(vpError.message);
+        }
+        else {
+          throw new Error('Failed to get verifiable presentation.');
+        }
       }
     } catch (error) {
-      setErrorMessage(error.message || 'Authentication failed. Please try again.');
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      }
+      else {
+        setErrorMessage('Authentication failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
       setStatusMessage('');
