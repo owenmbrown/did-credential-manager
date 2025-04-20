@@ -1,0 +1,13 @@
+{
+    "entryPoints": ["src"],
+    "entryPointStrategy": "expand",
+    "name": "DMV Demo App Backend",
+    "out": "docs",
+    "includeVersion": true,
+    "excludePrivate": true,
+    "excludeInternal": true,
+    "excludeExternals": true,
+    "excludeNotDocumented": false,
+    "tsconfig": "tsconfig.json"
+}
+  

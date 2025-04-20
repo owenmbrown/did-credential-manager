@@ -9,18 +9,31 @@ dotenv.config();
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 if (!INFURA_PROJECT_ID) throw new Error("INFURA_PROJECT_ID not set in .env");
 
-// Configure DID Resolver for `did:ethr`
+/**
+ * Configures a DID resolver using Infura and `ethr-did`.
+ */
 const resolver = new Resolver({
     ...getEthrResolver({ infuraProjectId: INFURA_PROJECT_ID }),
 });
 
+/**
+ * Singleton used to manage challenge strings for preventing VP replay attacks.
+ */
 const challengeManager = new ChallengeManager();
 
 const router = express.Router();
 
-// verify a Verifiable Credential
-// depreciated: use /verify-vp
-router.post("/verify-vc", async (req: Request, res: Response) => {
+/**
+ * POST /verifier/verify-vc
+ *
+ * Verifies a single Verifiable Credential (VC) JWT.
+ *
+ * @deprecated Use `/verifier/verify-vp` instead for verifying both the VC and its associated Verifiable Presentation (VP).
+ *
+ * @requestBody { vc: string } - The VC JWT to verify.
+ * @response { verified: boolean, payload?: any } - Returns verification result and decoded payload.
+ */
+export const verifyVC =async (req: Request, res: Response) => {
     try {
         const { vc } = req.body;
 
@@ -36,21 +49,37 @@ router.post("/verify-vc", async (req: Request, res: Response) => {
     } catch (error) {
         res.status(400).json({ verified: false, error: error });
     }
-});
+};
+router.post("/verify-vc", verifyVC);
 
-router.get("/generate-challenge", async (req: Request, res: Response) => {
+/**
+ * GET /verifier/generate-challenge
+ *
+ * Generates a one-time-use challenge string for Verifiable Presentations.
+ * The challenge is stored temporarily and expires after 60 seconds.
+ *
+ * @response { challenge: string } - A unique challenge string to be included in the VP.
+ */
+export const generateChallenge = async (_req: Request, res: Response) => {
     try {
-        const challenge = challengeManager.createChallenge()
-        
-        res.json({ challenge });
+      const challenge = challengeManager.createChallenge();
+      res.json({ challenge });
     } catch (error) {
-        res.status(400);
+      res.status(400).json({ error: "Failed to generate challenge" });
     }
-});
+};
+router.get("/generate-challenge", generateChallenge);
 
-// verify a verifiable presentation as well as the verifiable credential inside
-// returns the decoded VC in the response body
-router.post('/verify-vp', async (req : Request, res: Response) => { 
+/**
+ * POST /verifier/verify-vp
+ *
+ * Verifies a Verifiable Presentation (VP) along with the enclosed Verifiable Credential (VC).
+ * Enforces holder binding (subject of VC must match issuer of VP) and challenge freshness to prevent replay attacks.
+ *
+ * @requestBody { vp: string } - The Verifiable Presentation JWT to verify.
+ * @response { verified: boolean, error?: string, ...vcPayload } - Returns verification status and parsed VC data if valid.
+ */
+export const verifyVP = async (req : Request, res: Response) => { 
     try {
         const { vp } = req.body;
         // verify if the verifiable presentation is valid
@@ -105,6 +134,7 @@ router.post('/verify-vp', async (req : Request, res: Response) => {
         console.log(error);
         res.status(400).json({ verified: false, error: error });
     }
-})
+};
+router.post('/verify-vp', verifyVP);
 
 export default router;
