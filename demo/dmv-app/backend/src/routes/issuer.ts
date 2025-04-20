@@ -6,25 +6,47 @@ import * as dotenv from 'dotenv';
 
 
 dotenv.config();
+
+// Load environment variables
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 const WALLET_PRIVATE_KEY = process.env.WALLET_PRIVATE_KEY;
-if (INFURA_PROJECT_ID == undefined) throw new Error("INFURA_PROJECT_ID not set in .env")
-if (WALLET_PRIVATE_KEY == undefined) throw new Error("WALLET_PRIVATE_KEY not set in .env")
 
+if (INFURA_PROJECT_ID == undefined) throw new Error("INFURA_PROJECT_ID not set in .env");
+if (WALLET_PRIVATE_KEY == undefined) throw new Error("WALLET_PRIVATE_KEY not set in .env");
+
+    
+// Initialize Ethereum provider and wallet
 const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`);
-
-// Create an EthrDID object for the issuer
 const wallet = new ethers.Wallet(WALLET_PRIVATE_KEY, provider);
+
+// Create a DID-based issuer from the wallet
 const issuerDid = new EthrDID({ identifier: wallet.address, privateKey: WALLET_PRIVATE_KEY }) as Issuer;
 
 const router = express.Router();
 
-router.get("/test", (req : Request, res : Response) => {
+/**
+ * GET issuer/test
+ *
+ * Simple test route to confirm the backend is running.
+ */
+export const test =  (req : Request, res : Response) => {
     res.send("Hello world!")
-});
+};
+router.get("/test", test);
 
-// Issue a Verifiable Credential (VC)
-router.post("/issue-vc", async (req : Request, res : Response) => {
+/**
+ * POST issuer/issue-vc
+ *
+ * Issues a Verifiable Credential (VC) signed by the server's DID.
+ *
+ * Request body:
+ * - subjectDid: string — the DID of the credential subject
+ * - claim: object — the claims to embed in the credential
+ *
+ * Response:
+ * - vc: string — the signed Verifiable Credential JWT
+ */
+export const issueVC = async (req : Request, res : Response) => {
     const { subjectDid, claim } = req.body;
 
     // Validate inputs
@@ -51,6 +73,7 @@ router.post("/issue-vc", async (req : Request, res : Response) => {
     const vcJwt = await createVerifiableCredentialJwt(vcPayload, issuerDid);
 
     res.json({ vc: vcJwt });
-});
+};
+router.post("/issue-vc", issueVC);
 
 export default router;
