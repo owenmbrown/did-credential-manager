@@ -19,31 +19,85 @@ const LoginPage = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isSnapInstalled, setIsSnapInstalled] = useState(false);
+
+  const checkSnapInstallation = async () => {
+    try {
+      if (!window.ethereum) {
+        setErrorMessage('MetaMask is not installed. Please install MetaMask to continue.');
+        return false;
+      }
+      
+      const snaps = await window.ethereum.request({
+        method: 'wallet_getSnaps',
+      }).catch(err => {
+        console.warn("Error checking snaps:", err);
+        return {};
+      });
+      
+      const snapInstalled = snaps && snaps[SNAP_ID];
+      setIsSnapInstalled(!!snapInstalled);
+      
+      return !!snapInstalled;
+    } catch (error) {
+      console.error('Error checking snap installation:', error);
+      return false;
+    }
+  };
 
   const connectToSnap = async () => {
     try {
       setIsConnecting(true);
       setStatusMessage('Connecting to Digital ID service...');
-      await window.ethereum.request({
-        method: 'wallet_requestSnaps',
-        params: {
-          [SNAP_ID]: {}
+      setErrorMessage('');
+      
+      // First check if it's already installed
+      const isInstalled = await checkSnapInstallation();
+      
+      if (!isInstalled) {
+        await window.ethereum.request({
+          method: 'wallet_requestSnaps',
+          params: {
+            [SNAP_ID]: {}
+          }
+        }).catch(err => {
+          throw new Error(`Failed to connect to Digital ID service: ${err.message}`);
+        });
+        
+        // Verify installation was successful
+        const isNowInstalled = await checkSnapInstallation();
+        
+        if (!isNowInstalled) {
+          throw new Error('Failed to install Digital ID service');
         }
-      });
+      }
+      
       setStatusMessage('Connected to Digital ID service');
       return true;
     } catch (error) {
-      setErrorMessage(`Failed to connect to Digital ID service: ${error.message}`);
+      console.error('Snap connection error:', error);
+      setErrorMessage(`Failed to connect to Digital ID service: ${error.message || 'Unknown error'}`);
       return false;
     } finally {
       setIsConnecting(false);
     }
   };
 
+  // Modified useEffect to recover after errors
   useEffect(() => {
-    if (window.ethereum) {
-      connectToSnap();
-    }
+    const initializeSnap = async () => {
+      if (window.ethereum) {
+        await checkSnapInstallation();
+        // Re-check every 5 seconds in case of lost connection
+        const intervalId = setInterval(() => {
+          checkSnapInstallation();
+        }, 5000);
+        
+        return () => clearInterval(intervalId);
+      }
+    };
+    
+    initializeSnap();
   }, []);
 
   const handleDidLogin = async () => {
@@ -58,29 +112,13 @@ const LoginPage = () => {
         return;
       }
       
+      // Connect to snap if not already connected
       const connected = await connectToSnap();
       if (!connected) {
         return;
       }
       
-      try {
-        const snaps = await window.ethereum.request({
-          method: 'wallet_getSnaps',
-        });
-        
-        const snapInstalled = Object.values(snaps).some((snap: any) => {
-          return snap.id === SNAP_ID;
-        });
-        
-        if (!snapInstalled) {
-          setErrorMessage('DMV Snap not found. Please get your Digital ID from the DMV first.');
-          return;
-        }
-      } catch (snapError) {
-        throw new Error('Failed to check installed snaps.');
-      }
-      
-
+      // Generate a challenge from the verifier
       try {
         const challengeResponse = await fetch('http://localhost:5001/verifier/generate-challenge');
         if (!challengeResponse.ok) {
@@ -91,105 +129,109 @@ const LoginPage = () => {
         const challengeData = await challengeResponse.json();
         challenge = challengeData.challenge;
         
-        console.log("Received challenge:", challenge);
+        if (!challenge) {
+          throw new Error('Failed to get challenge from verifier');
+        }
+        
         setStatusMessage('Challenge received. Preparing credential presentation...');
       } catch (challengeError) {
-        console.error("Challenge error:", challengeError);
-        throw new Error('Failed to generate verification challenge.');
+        console.error('Challenge generation error:', challengeError);
+        throw new Error(`Failed to generate verification challenge: ${challengeError.message || 'Connection error'}`);
       }
       
-      if (!challenge) {
-        throw new Error('Failed to get challenge from verifier');
-      }
-      
+      // Request a verifiable presentation using the challenge
+      let vp_response;
       try {
-        console.log("Requesting VP with challenge:", challenge);
-        
-        const vpResponse = await window.ethereum.request({
+        vp_response = await window.ethereum.request({
           method: 'wallet_invokeSnap',
           params: {
             snapId: SNAP_ID,
             request: {
               method: 'get-vp',
               params: {
-                challenge: challenge,
+                challenge,
                 validTypes: ["credential-type"]
-              }
-            }
-          }
+              },
+            },
+          },
         }) as VPResponse;
         
-        console.log("VP Response:", vpResponse);
-        
-        if (!vpResponse || !vpResponse.success) {
-          throw new Error(vpResponse?.message || 
-            'Failed to get verifiable presentation. You may need to get a Digital ID first.');
-        }
-        
-        const vp = vpResponse.vp;
-        setStatusMessage('Credential found. Verifying with bank services...');
-        
-        try {
-          
-          const verifyResponse = await fetch('http://localhost:5001/verifier/verify-vp', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ vp }),
-          });
-          
-          const responseText = await verifyResponse.text();
-          let verifyResult;
-          
-          try {
-            verifyResult = JSON.parse(responseText);
-          } catch (e) {
-            throw new Error(`Invalid verification response: ${responseText}`);
-          }
-          
-          if (!verifyResponse.ok || !verifyResult.verified) {
-            throw new Error(verifyResult.error || 'Credential verification failed');
-          }
-          
-          const credentialSubject = verifyResult.payload?.vc.credentialSubject;
-          console.log(credentialSubject);
-          
-          if (!credentialSubject.permissions || !credentialSubject.permissions.includes('banking')) {
-            throw new Error('Your Digital ID does not have banking permissions');
-          }
-          
-          login({
-            name: credentialSubject.name || 'Bank Customer',
-            address: credentialSubject.address || '123 Main St',
-            licenseNumber: credentialSubject.licenseNumber || '',
-          });
-          await fetch('/api/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              licenseNumber: credentialSubject.licenseNumber, // or another unique identifier
-              firstName: credentialSubject.name.split(' ')[0],
-              lastName: credentialSubject.name.split(' ')[1] || '',
-              address: credentialSubject.address || '123 Main St',
-            }),
-          });
-          router.push('/account');
-        } catch (verifyError) {
-          throw new Error('Failed to verify credential presentation.');
+        if (!vp_response || !vp_response.success) {
+          throw new Error('Failed to get verifiable presentation. You may need to get a Digital ID first.');
         }
       } catch (vpError) {
-        throw new Error(vpError.message || 'Failed to get verifiable presentation.');
+        console.error('VP generation error:', vpError);
+        // Re-check snap connection status
+        await checkSnapInstallation();
+        throw new Error(`Failed to get verifiable presentation: ${vpError.message || 'Unknown error'}`);
+      }
+      
+      setStatusMessage('Credential found. Verifying with bank services...');
+      const vp = vp_response.vp;
+      
+      // Verify the presentation with the verifier service
+      try {
+        const verifyResponse = await fetch('http://localhost:5001/verifier/verify-vp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ vp }),
+        });
+        
+        const responseText = await verifyResponse.text();
+        let verifyResult;
+        
+        try {
+          verifyResult = JSON.parse(responseText);
+        } catch (e) {
+          throw new Error(`Invalid verification response: ${responseText}`);
+        }
+        
+        if (!verifyResponse.ok || !verifyResult.verified) {
+          throw new Error(verifyResult.error || 'Credential verification failed');
+        }
+        
+        const credentialSubject = verifyResult.payload?.vc.credentialSubject;
+        console.log(credentialSubject);
+        
+        if (!credentialSubject.permissions || !credentialSubject.permissions.includes('banking')) {
+          throw new Error('Your Digital ID does not have banking permissions');
+        }
+        
+        login({
+          name: credentialSubject.name || 'Bank Customer',
+          licenseNumber: credentialSubject.licenseNumber || '',
+        });
+        
+        router.push('/account');
+      } catch (verifyError) {
+        console.error('Verification error:', verifyError);
+        throw new Error(`Failed to verify credential presentation: ${verifyError.message || 'Unknown error'}`);
       }
     } catch (error) {
+      console.error('Authentication error:', error);
       setErrorMessage(error.message || 'Authentication failed. Please try again.');
+      // Re-check snap connection after error
+      setTimeout(() => {
+        checkSnapInstallation();
+      }, 1000);
     } finally {
       setIsLoading(false);
       setStatusMessage('');
     }
   };
+
+  // Add a reconnect button when snap connection is lost
+  const reconnectButton = !isSnapInstalled && (
+    <button
+      onClick={connectToSnap}
+      disabled={isConnecting}
+      className="bg-yellow-500 text-white py-2 px-4 rounded-lg mb-4 w-full hover:bg-yellow-600 disabled:bg-yellow-300"
+    >
+      {isConnecting ? 'Reconnecting...' : 'Reconnect to Digital ID Service'}
+    </button>
+  );
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center">
@@ -211,18 +253,26 @@ const LoginPage = () => {
         <button
           onClick={connectToSnap}
           disabled={isConnecting}
-          className="bg-gray-200 text-gray-800 py-2 px-4 rounded-lg mb-4 w-full hover:bg-gray-300 disabled:bg-gray-100"
+          className={`${isSnapInstalled ? 'bg-green-500' : 'bg-gray-200'} text-gray-800 py-2 px-4 rounded-lg mb-4 w-full hover:${isSnapInstalled ? 'bg-green-600' : 'bg-gray-300'} disabled:bg-gray-100`}
         >
-          {isConnecting ? 'Connecting...' : 'Connect to Digital ID Service'}
+          {isConnecting ? 'Connecting...' : isSnapInstalled ? '✓ Digital ID Service Connected' : 'Connect to Digital ID Service'}
         </button>
+        {reconnectButton}
         <button
           onClick={handleDidLogin}
-          disabled={isLoading}
+          disabled={isLoading || !isSnapInstalled}
           className="bg-blue-600 text-white py-3 px-6 rounded-lg w-full hover:bg-blue-700 disabled:bg-blue-300 mb-4"
         >
           {isLoading ? 'Authenticating...' : 'Login with Digital ID'}
         </button>
-        <div className="text-center mt-4"></div>
+        <div className="text-center mt-4 text-sm text-gray-500">
+          Don't have a Digital ID? Visit the Texas A&M DMV to get one.
+        </div>
+        {!isSnapInstalled && (
+          <div className="text-center mt-2 text-sm text-red-500">
+            Please connect to the Digital ID service to continue.
+          </div>
+        )}
       </div>
       <Head />
       <Sidebar />
