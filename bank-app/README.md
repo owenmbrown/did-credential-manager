@@ -2,6 +2,10 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+use the provided SQL script to populate a database with account information for randomized and made up users
+The connection to the database requires a .env.local file placed in the level directory of the bank app, consisting of 
+the host server IP, port, the user name and password, and the schema name.
+
 First, run the development server:
 
 ```bash
