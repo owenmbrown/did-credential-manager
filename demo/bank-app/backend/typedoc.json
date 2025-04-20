@@ -1,7 +1,7 @@
 {
     "entryPoints": ["src"],
     "entryPointStrategy": "expand",
-    "name": "DMV Demo App Backend",
+    "name": "Bank Demo App Backend",
     "out": "docs",
     "includeVersion": true,
     "excludePrivate": true,

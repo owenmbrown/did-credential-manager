@@ -1,7 +1,7 @@
 {
     "entryPoints": ["app","components","lib"],
     "entryPointStrategy": "expand",
-    "name": "DMV Demo App Backend",
+    "name": "Bank Demo App",
     "out": "docs",
     "includeVersion": true,
     "excludePrivate": true,
