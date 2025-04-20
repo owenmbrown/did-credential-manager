@@ -274,6 +274,7 @@ const LoginPage = () => {
           </div>
         )}
       </div>
+      <Head />
       <Sidebar />
     </div>
   );

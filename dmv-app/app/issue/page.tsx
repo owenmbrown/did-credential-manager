@@ -5,6 +5,12 @@ import Head from "@/components/header";
 
 const SNAP_ID = 'local:http://localhost:8080';
 
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
+
 const CredentialPage = () => {
   const [did, setDid] = useState('');
   const [isSnapInstalled, setIsSnapInstalled] = useState(false);
