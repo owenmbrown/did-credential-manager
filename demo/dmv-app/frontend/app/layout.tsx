@@ -11,7 +11,11 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
+/**
+ * metadata
+ * 
+ * metadata information for the webpage
+ **/
 export const metadata: Metadata = {
   title: "Texas A&M Galveston Campus Department of Motor Vehicles",
   description: "Created by the Kyndryl capstone team",

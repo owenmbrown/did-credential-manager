@@ -255,11 +255,19 @@ const CredentialPage = () => {
       }
     } catch (storeError) {
       console.error("Error during store-vc:", storeError);
-      setStatusMessage(`Error storing credential: ${storeError.message}`);
+      if (storeError instanceof Error) {
+        setStatusMessage(`Error storing credential: ${storeError.message}`);
+      } else {
+        setStatusMessage(`Unknown error occurred`);
+      }
     }
   } catch (error) {
     console.error('Error requesting credential:', error);
-    console.error('Error details:', error.stack);
+    if (error instanceof Error) {
+      console.error('Error details:', error.stack);
+    } else {
+      setStatusMessage(`Unknown error occurred`);
+    }  
     setStatusMessage('Error obtaining credential. Please try again.');
   } finally {
     setIsProcessing(false);
