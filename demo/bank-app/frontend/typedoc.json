@@ -1,0 +1,13 @@
+{
+    "entryPoints": ["app","components","lib"],
+    "entryPointStrategy": "expand",
+    "name": "Bank Demo App",
+    "out": "docs",
+    "includeVersion": true,
+    "excludePrivate": true,
+    "excludeInternal": true,
+    "excludeExternals": true,
+    "excludeNotDocumented": false,
+    "tsconfig": "tsconfig.json"
+}
+  

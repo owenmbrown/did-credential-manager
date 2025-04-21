@@ -1,0 +1,13 @@
+{
+    "entryPoints": ["src/**/*.ts", "src/**/*.tsx"],
+    "entryPointStrategy": "expand",
+    "name": "DID:ethr Credential Manager",
+    "out": "docs",
+    "includeVersion": true,
+    "excludePrivate": true,
+    "excludeInternal": true,
+    "excludeExternals": true,
+    "excludeNotDocumented": false,
+    "tsconfig": "tsconfig.json"
+}
+  

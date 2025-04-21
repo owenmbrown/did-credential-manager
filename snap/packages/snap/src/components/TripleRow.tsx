@@ -1,18 +1,21 @@
 import { Box, SnapComponent } from "@metamask/snaps-sdk/jsx";
 
 type TripleRowProps = {
-    // // the label to display on the left side of the row
-    // label: string;
-    
-    // // the content to display on the right side of the row
-    // children: any;
-
     left: any;
     middle: any;
     right: any;
   };
   
-// a custom row component that mimics the MetaMask Row component, but allows any content
+/**
+ * A custom UI row component that mimics MetaMask's `Row` layout but supports three aligned content blocks.
+ *
+ * This component is useful when you need to show left, middle, and right-aligned elements
+ * (e.g., label, status indicator, action button) in a single horizontal row.
+ *
+ * @param left - Content rendered on the left side of the row.
+ * @param middle - Content rendered in the center of the row.
+ * @param right - Content rendered on the right side of the row.
+ */
 export const TripleRow: SnapComponent<TripleRowProps> = ({ 
     left,
     middle,
