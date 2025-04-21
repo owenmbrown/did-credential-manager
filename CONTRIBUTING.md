@@ -138,3 +138,26 @@ add info about tests
   - Data minimization
   - Right to access and erasure
   - Explicit consent for processing
+
+
+## Documentation
+- [Snap API](snap/packages/snap/docs/)
+- [Snap Companion App](snap/packages/site/docs/)
+- [DMV App Frontend](demo/dmv-app/frontend/docs/)
+- [DMV App Backend](demo/dmv-app/backend/docs/)
+- [Bank App Frontend](demo/bank-app/frontend/docs/)
+- [Bank App Backend](demo/bank-app/backend/docs/)
+
+You can read the documentation by opening any `docs/index.html` in your browser
+
+Regeneate developer documentation
+```bash
+npx typedoc
+```
+Outputs documentation to `/docs`
+
+
+## Future Direction
+- Export/import identity features are currently stubbed for security reasons.
+- See `snapExportIdentity()` and `snapImportIdentity()` for notes on future implementation.
+- Improve the snap companion app to be more user 
