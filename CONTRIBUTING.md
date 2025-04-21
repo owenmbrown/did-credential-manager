@@ -106,3 +106,19 @@ Tools/scripts that support development or were used during research.
         npm install
         npm start
         ```
+
+## Calling RPC Methods
+You can test Snap methods using wallet_invokeSnap. See [RPC Examples](snap/packages/snap/rpc-examples.md) for sample calls.
+
+Example:
+```ts
+await window.ethereum.request({
+  method: 'wallet_invokeSnap',
+  params: {
+    snapId: 'local:http://localhost:8080',
+    request: {
+      method: 'create-did',
+    },
+  },
+});
+```
