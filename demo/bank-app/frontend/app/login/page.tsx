@@ -24,14 +24,14 @@ const LoginPage = () => {
 
   const checkSnapInstallation = async () => {
     try {
-      if (!window.ethereum) {
+      if (!(window as any).ethereum) {
         setErrorMessage('MetaMask is not installed. Please install MetaMask to continue.');
         return false;
       }
       
-      const snaps = await window.ethereum.request({
+      const snaps = await (window as any).ethereum.request({
         method: 'wallet_getSnaps',
-      }).catch(err => {
+      }).catch((err: any) => {
         console.warn("Error checking snaps:", err);
         return {};
       });
@@ -56,12 +56,12 @@ const LoginPage = () => {
       const isInstalled = await checkSnapInstallation();
       
       if (!isInstalled) {
-        await window.ethereum.request({
+        await (window as any).ethereum.request({
           method: 'wallet_requestSnaps',
           params: {
             [SNAP_ID]: {}
           }
-        }).catch(err => {
+        }).catch((err: any) => {
           throw new Error(`Failed to connect to Digital ID service: ${err.message}`);
         });
         
@@ -89,7 +89,7 @@ const LoginPage = () => {
   // Modified useEffect to recover after errors
   useEffect(() => {
     const initializeSnap = async () => {
-      if (window.ethereum) {
+      if ((window as any).ethereum) {
         await checkSnapInstallation();
         // Re-check every 5 seconds in case of lost connection
         const intervalId = setInterval(() => {
@@ -139,13 +139,13 @@ const LoginPage = () => {
         setStatusMessage('Challenge received. Preparing credential presentation...');
       } catch (challengeError) {
         console.error('Challenge generation error:', challengeError);
-        throw new Error(`Failed to generate verification challenge: ${challengeError.message || 'Connection error'}`);
+        throw new Error(`Failed to generate verification challenge: ${(challengeError instanceof Error) ? challengeError.message : 'Connection error'}`);
       }
       
       // Request a verifiable presentation using the challenge
       let vp_response;
       try {
-        vp_response = await window.ethereum.request({
+        vp_response = await (window as any).ethereum.request({
           method: 'wallet_invokeSnap',
           params: {
             snapId: SNAP_ID,
@@ -166,7 +166,7 @@ const LoginPage = () => {
         console.error('VP generation error:', vpError);
         // Re-check snap connection status
         await checkSnapInstallation();
-        throw new Error(`Failed to get verifiable presentation: ${vpError.message || 'Unknown error'}`);
+        throw new Error(`Failed to get verifiable presentation: ${(vpError instanceof Error) ? vpError.message : 'Unknown error'}`);
       }
       
       setStatusMessage('Credential found. Verifying with bank services...');
@@ -210,11 +210,11 @@ const LoginPage = () => {
         router.push('/account');
       } catch (verifyError) {
         console.error('Verification error:', verifyError);
-        throw new Error(`Failed to verify credential presentation: ${verifyError.message || 'Unknown error'}`);
+        throw new Error(`Failed to verify credential presentation: ${(verifyError instanceof Error) ? verifyError.message : 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Authentication error:', error);
-      setErrorMessage(error.message || 'Authentication failed. Please try again.');
+      setErrorMessage((error instanceof Error) ? error.message : 'Authentication failed. Please try again.');
       // Re-check snap connection after error
       setTimeout(() => {
         checkSnapInstallation();
