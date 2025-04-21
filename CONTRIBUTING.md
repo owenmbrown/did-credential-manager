@@ -122,3 +122,19 @@ await window.ethereum.request({
   },
 });
 ```
+
+## Running Tests
+add info about tests
+
+
+## Coding Style
+- Use **TypeScript** for all files.
+- Add **JSDoc/TypeDoc annotations** to all exported functions, types, and classes.
+- Design **UI components using Snap-compatible primitives** like `<Box>`, `<Text>`, `<Button>`, etc.
+- Restrict **Snap methods to the companion app only** whenever possible (`origin` check).
+- Always provide **explicit user consent prompts** for any action involving sensitive identity or data.
+- Keep **sensitive logic and data isolated within the Snap** runtime and UI — avoid exposing it to external sites.
+- Handle personal data in accordance with **[GDPR principles](https://gdpr-info.eu/)**, including:
+  - Data minimization
+  - Right to access and erasure
+  - Explicit consent for processing
