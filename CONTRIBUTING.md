@@ -29,7 +29,7 @@ Tools/scripts that support development or were used during research.
 `/dev/presentation-creation` -> Script to generate a Verifiable Presentation\
 `/dev/register-did-ethr` -> Script to interact with EthrDIDRegistry for key updates\
 `/dev/veramo-test` -> Veramo-based test for VC creation/resolution (exploratory)\
-`/dev/wallet-setup` -> Credential manager UI using Identify Snap (research artifact)
+`/dev/identify-snap` -> Credential manager UI using Identify Snap (research artifact)
 
 ### Testing
 
