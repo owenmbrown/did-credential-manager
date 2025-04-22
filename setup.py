@@ -15,14 +15,17 @@ NPM_DIRS = [
 # Directory to run `yarn install`
 YARN_DIR = "./snap"
 
-# Directories that need backend .env with private key
+# Backend .env targets (wallet + infura)
 ENV_DIRS_BACKEND = [
     "./demo/bank-app/backend",
     "./demo/dmv-app/backend"
 ]
 
-# Directory that needs snap .env with companion origin
+# Snap .env target (infura + companion origin)
 ENV_DIR_SNAP = "./snap/packages/snap"
+
+# Frontend local env target
+ENV_FILE_BANK_FRONTEND = "./demo/bank-app/frontend/.env.local"
 
 def check_command_exists(command):
     return shutil.which(command) is not None
@@ -39,13 +42,28 @@ def write_env_file_backend(path, wallet_key, infura_id):
     env_path = Path(path) / ".env"
     env_contents = f'WALLET_PRIVATE_KEY="{wallet_key}"\nINFURA_PROJECT_ID="{infura_id}"\n'
     env_path.write_text(env_contents)
-    print(f"✅ Wrote .env file to {path}")
+    print(f"✅ Wrote backend .env to {path}")
 
 def write_env_file_snap(path, infura_id):
     env_path = Path(path) / ".env"
-    env_contents = f'INFURA_PROJECT_ID="{infura_id}"\nCOMPANION_APP_ORIGIN="http://localhost:8000"\n'
+    env_contents = (
+        f'INFURA_PROJECT_ID="{infura_id}"\n'
+        'COMPANION_APP_ORIGIN="http://localhost:8000"\n'
+    )
     env_path.write_text(env_contents)
-    print(f"✅ Wrote .env file to {path}")
+    print(f"✅ Wrote snap .env to {path}")
+
+def write_env_local_frontend(path):
+    env_path = Path(path)
+    env_contents = (
+        'DB_HOST="127.0.0.1"\n'
+        '# DB_PORT="3306"\n'
+        'DB_USER="root"\n'
+        '# DB_PASSWORD="your_db_password"\n'
+        'DB_NAME="demo"\n'
+    )
+    env_path.write_text(env_contents)
+    print(f"✅ Wrote frontend .env.local to {path}")
 
 def main():
     print("🚀 Project setup starting...\n")
@@ -71,7 +89,9 @@ def main():
 
     write_env_file_snap(ENV_DIR_SNAP, infura_id)
 
-    print("\n✅ Setup complete! You're ready to go.")
+    write_env_local_frontend(ENV_FILE_BANK_FRONTEND)
+
+    print("\n✅ Setup complete! You're ready to start development.")
 
 if __name__ == "__main__":
     main()
