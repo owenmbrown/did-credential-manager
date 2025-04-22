@@ -1,327 +1,127 @@
-# Capstone-Kyndryl-project
+# DID:ethr Credential Manager
+**Texas A&M University**\
+**Computer Science**\
+**Senior Capstone Project - Spring 2025**
 
-# Issuer
-Creates and signs Verifiable Credentials (VCs).
-## Running
-1. Go to the isssuer/backend directory
-2. Install packages `npm install`
-3. Run with nodemon `npx nodemon`
-## Endpoints
-## `POST localhost:5000/issuer/issue-vc`
+**Developed by**: [Nathan Andrews](https://github.com/Nathan-Andrews), [Adin Tyger](https://github.com/AdinTyger), [Lance Hinton](https://github.com/hinton-lance), [Caleb Austin](https://github.com/EpicExplode).\
+**In Collaboration with**: [Kyndryl](https://www.kyndryl.com/)
+
+DID:ethr Credential Manager is a [MetaMask Snap](https://metamask.io/snaps) that enables users to create and manage `did:ethr` identities and verifiable credentials.  
+This repository also includes two real-world demo applications that showcase how issuers and verifiers can interact with this Snap.
+
+## About
+DID:ethr Credential Manager empowers users to take control of their digital identity using decentralized identifiers and verifiable credentials, while keeping sensitive data secure inside the MetaMask Snap environment.
+
+The Snap enables users to:
+- Create a new `did:ethr` or import an existing one via the companion app.
+- Receive [Verifiable Credentials](https://en.wikipedia.org/wiki/Verifiable_credentials) (VCs) from trusted issuers, such as a DMV.
+- Securely store those credentials inside the Snap with user consent.
+- Present credentials to verifiers (e.g., a bank) when requested — securely via Verifiable Presentations.
+
+This repository includes:
+- The MetaMask Snap for identity and credential management.
+- A **DMV demo app** (issuer role).
+- A **Bank demo app** (verifier role).
+
+---
+
+## Justification
+This project demonstrates how decentralized identity (DID) systems can return control of personal data to individuals, while still meeting the trust and verification requirements of real-world digital services.
+
+We aim to:
+- Explore how Ethereum can serve as a foundation for **self-sovereign identity**.
+- Align our implementation with **data privacy standards** like the [GDPR](https://gdpr.eu/), giving users the right to consent, view, and control their personal information.
+- Showcase the potential of Verifiable Credentials to streamline secure, privacy-respecting digital interactions.
+
+We chose:
+- **Ethereum**, for its mature infrastructure and the existing `EthrDIDRegistry` smart contract standard.
+- **MetaMask Flask**, for its trusted wallet interface and Snap extensibility — ideal for users already interested in digital sovereignty.
+
+
+## Getting Started
+
+### Clone Repo
+  ```bash
+  git clone https://github.com/Nathan-Andrews/Capstone-Kyndryl-project.git
+  cd Capstone-Kyndryl-project
+  ```
+### Install Dependencies
+```bash
+./setup.sh
+```
+
+### Run
+```bash
+./run-all.sh
+```
+
+### More
+More detailed setup info can be found [here](CONTRIBUTING.md#getting-started)
+
+## API
+The demo issuer and verifier provide some endpoints
+
+### `POST localhost:5000/issuer/issue-vc`
 Issues a Verifiable Credential (VC) with a claim about a subject
-### Usage
+#### Usage
 ```
 {
  "subjectDid": "did:ethr:0x5678...",
  "claim": { "age": 25 }
 }
 ```
-### Response
+#### Response
 ```
 {
  "vc": "eyJhbGciOiJI..."
 }
 ```
 
-# MetaMask Snap RPC Methods
-This MetaMask Snap provides several RPC methods that interact with a decentralized identity (DID) and verifiable credentials (VC):
 
-## Setup
-1. Add `.env` to snap/packages/snap
-  ```
-  INFURA_PROJECT_ID="..."
-  COMPANION_APP_ORIGIN="http://localhost:8000"
-  ```
-2. Install dependencies `yarn install`
-## Running
-### Running snap & example frontend
-This will start the snap and the example frontend implementation to interact with it
-1. `cd snap`
-2. `yarn start`
-### Running snap
-This will start just the snap
-1. `cd snap/packages/snap`
-2. `yarn start`
-
-## `create-did`
-This method generates a new Decentralized Identifier (DID) of type `did:ethr` by creating a new Ethereum wallet. It stores the new DID (in the form of the wallet's address and private key) in the Snap's secure storage for future use. A dialog is displayed confirming the creation of the DID.
-
-Note: This method is restricted to the companion app only.
-
-### Usage
-```
-await invokeSnap({
-  method: 'create-did'
-});
-```
-### Response
-Returns the address of the newly created DID.
-```
-{
-  "success": true,
-  "did": "0x1234567890abcdef1234567890abcdef12345678"
-}
-```
-Can fail if the user rejects the dialogue
-```
-{
-  "success": false,
-  "message": "user rejected dialogue"
- }
-```
-
-## `get-did`
-This method retrieves the `did:ethr` stored in the Snap’s secure storage. If no DID has been created or stored yet, it returns a failure message.
-
-### Usage
-```
-const result = await invokeSnap({
-  method: 'get-did'
-});
-console.log(result.did);
-```
-### Response
-Returns the DID address
-```
-{
-  "success": true,
-  "did": "0x1234567890abcdef1234567890abcdef12345678"
-}
-```
-Can fail if the did isn't stored
-```
-{
-  "success": false,
-  "message": "no did is stored"
- }
-```
-
-## `store-vc`
-This method stores a Verifiable Credential (VC) associated with the current DID in Snap's secure storage. The VC is passed as a parameter and is associated with the DID. If no DID is found in the storage, the method will display an alert informing the user that no DID exists.
-### Usage
-```
-await invokeSnap({
-  method: 'store-vc',
-  params: {
-    vc: "your-verifiable-credential",
-    type: "credential-type",
-    defaultName: "credential name"
-  }
-});
-```
-### Response
-Returns success:
-```
-{
-  "success": true,
- }
-```
-Can fail if required parameters are missing:
-```
-{
-  "success": false,
-  "message": "missing params: [vc, type, defaultName]"
-}
-```
-Can fail if no DID is stored:
-```
-{
-  "success": false,
-  "message": "no did is stored"
-}
-```
-
-## `get-vp`
-This method generates a Verifiable Presentation (VP) by signing the stored Verifiable Credential (VC) with the DID’s private key. The method takes a `challenge` as a parameter and creates a VP containing the VC and the provided challenge. If the challenge is missing or no VC is stored in the Snap, an alert is shown to the user.
-
-### Usage
-```
-await invokeSnap({
-  method: 'get-vp',
-  params: {
-    challenge: "unique-challenge-string",
-    validTypes: ["credential-type"]
-  }
-});
-```
-### Response
-Returns the signed JWT representing the Verifiable Presentation.
-```
-{
-  "success": true,
-  "vp": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2cCI6eyJjYXRhbCI6Imh0dHBzOi8vZGVzY3JpcH..."} 
-}
-```
-Can fail if the challenge or required valid types are missing, or if no VC is stored:
-```
-{
-  "success": false,
-  "message": "missing params: [challenge, validTypes]"
-}
-```
-Can fail if no DID is stored:
-```
-{
-  "success": false,
-  "message": "no did is stored"
-}
-```
-
-## `manage-vcs`
-This method allows the user to manage their stored Verifiable Credentials (VCs), including editing, deleting, or recovering them. The user can interact with a list of credentials and perform actions such as editing the credential name or deleting a credential. The method also supports recovering deleted credentials.
-
-Note: This method is restricted to the companion app only.
-
-### Usage
-```
-await invokeSnap({
-  method: 'manage-vcs'
-});
-```
-
-### Response
-Returns a success message when the management process is complete.
-```
-{
-  "success": false,
-  "message": "no did is stored"
-}
-```
-Can fail if no DID is stored:
-```
-{
-  "success": false,
-  "message": "user rejected dialogue"
-}
-```
-
-## `get-all-vc`
-This method retrieves all Verifiable Credentials (VCs) stored in the Snap’s secure storage. It returns a list of credentials associated with the stored DID.
-
-Note: This method is restricted to the companion app only.
-
-### Usage
-```
-await invokeSnap({
-  method: 'get-all-vc'
-});
-```
-
-### Response
-Returns a list of credentials.
-```
-{
-  "success": true
-  "credentials": [
-    {
-      "vc": "credential-data",
-      "name": "credential-name",
-      "uuid": "credential-uuid",
-      "type": "credential-type",
-      "claim": "claim-data",
-      "issuer": "issuer-info",
-      "subject": "subject-info",
-      "claimString": "claim-string"
-    }
-  ]
-}
-```
-Can fail if no DID is stored:
-```
-{
-  "success": false,
-  "message": "no did is stored"
-}
-
-```
-
-
-# App (Verifier)
-Requests the user's VC and verifies it.
-Resolves the user's DID using ethereum did registry.
-## Backend
-## `POST localhost:5001/verifier/verify-vc`
-Depriciated: use `verifier/verify-vp` instead
-
-Verifies a verifiable credential
-### Usage
-```
-{
-  "vc": "eyJhbGciOiJI..."
-}
-```
-### Response
-If verification succeeds
-```
-{
-    "verified": true,
-    "payload": {
-        "verified": true,
-        "payload": {
-            "vc": {
-                "@context": [
-                    "https://www.w3.org/2018/credentials/v1"
-                ],
-                "type": [
-                    "VerifiableCredential"
-                ],
-                "credentialSubject": {
-                    "age": 25
-                }
-            },
-            "subject": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3",
-            "nbf": 1741829021,
-            "iss": "did:ethr:0xfe4568038759b739D6ebE05a03453b6c989D71e3"
-        },
-        .......
-     }
-}
-```
-If verification fails
-```
-{
-     "verified": false,
-     "error": "some error
-
-}
-```
-
-## `GET localhost:5001/verifier/generate-challenge`
+### `GET localhost:5001/verifier/generate-challenge`
 Generated a challenge string, for the user to include in the verifiable presentation.  Each challenge expires after a minute, and can only be used once, so this prevents replay attacks.
-### Usage
-### Response
-```
+#### Response
+```json
 {
-    "challenge": "PAdd2emrfP9AImxelCtfTJgGVQW6IckF9Wtf7cpo7HI"
+  "challenge": "PAdd2emrfP9AImxelCtfTJgGVQW6IckF9Wtf7cpo7HI"
 }
 ```
 
-## `POST localhost:5001/verifier/verify-vp`
+### `POST localhost:5001/verifier/verify-vp`
 Verify a verifiable presentation (VP), and verify the verifiable credential (VC) inside.
-### Usage
-```
+#### Usage
+```json
 {
   "vp": "eyJhbGciOiJI..."
 }
 ```
-### Response
-Will return an error the challange is incorrect or expired
-Will return an error if the issuer of the VP and the subject of the VC don't match
-Will return an error if either the VP or the VC is invalid
-```
+####
+Returns success:
+```json
 {
-  "verified": false,
-  "error": "..."
+  "success": true,
 }
 ```
-If successful, will return the VC contained in the VP
-```
-{
-  "verified": true,
-  "payload": {
-       ...
-  }
-}
+
+
+More details on the API can be found at
+  - [Issuer Documentation](demo/dmv-app/backend/docs/)
+  - [Verifier Documentation](demo/bank-app/backend/docs/)
+
+## RPC Methods
+You can run Snap methods using wallet_invokeSnap. See [RPC Examples](snap/packages/snap/rpc-examples.md) for sample calls.
+
+Example:
+```ts
+await window.ethereum.request({
+  method: 'wallet_invokeSnap',
+  params: {
+    snapId: 'local:http://localhost:8080',
+    request: {
+      method: 'create-did',
+    },
+  },
+});
 ```
 
 # Registering a did:ethr
