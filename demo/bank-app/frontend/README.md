@@ -2,11 +2,33 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-use the provided SQL script to populate a database with account information for randomized and made up users
-The connection to the database requires a .env.local file placed in the level directory of the bank app, consisting of 
-the host server IP, port, the user name and password, and the schema name.
+### Setup Database
+```bash
+sudo apt install mysql-server       # Linux
+sudo service mysql start            # Linux
 
-First, run the development server:
+brew install mysql                  # macOS
+brew services start mysql           # macOS
+
+# Login and create DB
+mysql -u root -p
+> CREATE DATABASE demo;
+> exit;
+
+# populate database with sample data
+cd demo/bank-app/frontend
+mysql -u root -p demo < ./populate-bank.sql
+```
+### Add `.env` to `demo/bank-app/backend`
+```
+DB_HOST="127.0.0.1"
+DB_PORT="3306"                  # optional.  Defaults to 3306
+DB_USER="root"
+DB_PASSWORD="your_db_password"  # optional
+DB_NAME="demo"
+```
+
+### Run the development server:
 
 ```bash
 npm run dev

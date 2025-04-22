@@ -46,6 +46,24 @@ Tools/scripts that support development or were used during research.
 ### Install Dependencies
 
 #### Option A. Use the Setup Scripts *(easiest)*
+- **Database**
+```bash
+sudo apt install mysql-server       # Linux
+sudo service mysql start            # Linux
+
+brew install mysql                  # macOS
+brew services start mysql           # macOS
+
+# Login and create DB
+mysql -u root -p
+> CREATE DATABASE demo;
+> exit;
+
+cd demo/bank-app/frontend
+mysql -u root -p demo < ./populate-bank.sql
+```
+
+- **Environment**
 ```bash
 ./setup.sh
 ./run-all.sh
@@ -89,18 +107,38 @@ Tools/scripts that support development or were used during research.
         ```
 
 - **Bank Demo App**
-    1. Add `.env` to `demo/bank-app/backend`
+    1. Setup Database
+        ```bash
+        sudo apt install mysql-server       # Linux
+        sudo service mysql start            # Linux
+
+        brew install mysql                  # macOS
+        brew services start mysql           # macOS
+
+        # Login and create DB
+        mysql -u root -p
+        > CREATE DATABASE demo;
+        > exit;
+
+        # populate database with sample data
+        cd demo/bank-app/frontend
+        mysql -u root -p demo < ./populate-bank.sql
         ```
-        WALLET_PRIVATE_KEY="your_wallet_key"
-        INFURA_PROJECT_ID="your_infura_project_id"
+    2. Add `.env` to `demo/bank-app/backend`
         ```
-    2. Run frontend
+        DB_HOST="127.0.0.1"
+        DB_PORT="3306"                  # optional.  Defaults to 3306
+        DB_USER="root"
+        DB_PASSWORD="your_db_password"  # optional
+        DB_NAME="demo"
+        ```
+    3. Run frontend
         ```bash
         cd demo/bank-app/frontend
         npm install
         npm run dev
         ```
-    3. Run backend
+    4. Run backend
         ```bash
         cd demo/bank-app/backend
         npm install
