@@ -15,7 +15,7 @@ await invokeSnap({
 
 ### Response
 Returns the address of the newly created DID.
-```js
+```json
 {
     "success": true,
     "did": "0x1234567890abcdef1234567890abcdef12345678"
@@ -26,7 +26,7 @@ Can fail if the user rejects the dialogue
 {
     "success": false,
     "message": "user rejected dialogue"
- }
+}
 ```
 
 ## `get-did`
@@ -108,7 +108,7 @@ Returns success:
 ```json
 {
   "success": true,
- }
+}
 ```
 Can fail if required parameters are missing:
 ```json
@@ -197,11 +197,17 @@ await invokeSnap({
 Returns a success message when the management process is complete.
 ```json
 {
+    "success": true
+}
+```
+Can fail if no DID is stored:
+```json
+{
     "success": false,
     "message": "no did is stored"
 }
 ```
-Can fail if no DID is stored:
+Can fail if the user rejects the dialog
 ```json
 {
     "success": false,

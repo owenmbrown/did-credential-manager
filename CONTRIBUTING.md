@@ -65,8 +65,8 @@ mysql -u root -p demo < ./populate-bank.sql
 
 - **Environment**
 ```bash
-./setup.sh
-./run-all.sh
+./setup.sh    # installs dependencies and sets up the environment
+./run-all.sh  # runs snap + demo frontend + backend apps
 ```
 
 #### Option B. Manual Setup:
@@ -74,12 +74,12 @@ mysql -u root -p demo < ./populate-bank.sql
 - **Snap**
     1. Install dependencies
         ```bash
-        cd snap       # installs dependencies and sets up the environment
-        yarn install  # runs snap + demo frontend + backend apps
+        cd snap
+        yarn install
         ```
     2. Add `.env` to `snap/packages/snap/`
         ```
-        INFURA_PROJECT_ID="..."
+        INFURA_PROJECT_ID="your_infura_project_id"
         COMPANION_APP_ORIGIN="http://localhost:8000"
         ```
     3. Start the snap
@@ -126,19 +126,24 @@ mysql -u root -p demo < ./populate-bank.sql
         ```
     2. Add `.env` to `demo/bank-app/backend`
         ```
+        WALLET_PRIVATE_KEY="your_wallet_key"
+        INFURA_PROJECT_ID="your_infura_project_id"
+        ```
+    3. Add `.env` to `demo/bank-app/frontend`
+        ```
         DB_HOST="127.0.0.1"
         DB_PORT="3306"                  # optional.  Defaults to 3306
         DB_USER="root"
         DB_PASSWORD="your_db_password"  # optional
         DB_NAME="demo"
         ```
-    3. Run frontend
+    4. Run frontend
         ```bash
         cd demo/bank-app/frontend
         npm install
         npm run dev
         ```
-    4. Run backend
+    5. Run backend
         ```bash
         cd demo/bank-app/backend
         npm install
