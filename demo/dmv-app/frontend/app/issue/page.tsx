@@ -175,6 +175,7 @@ const CredentialPage = () => {
     }
     
     // Request the credential with possibly modified DID
+    //for testing purposes, comment this out, for the demo it will need to be uncommented
     const issuerResponse = await fetch('http://localhost:5000/issuer/issue-vc', {
       method: 'POST',
       headers: {
@@ -195,6 +196,14 @@ const CredentialPage = () => {
         }
       }),
     });
+    
+
+    // For testing purposes, we will use a mock response instead of the fetch call above
+    /*
+    const issuerResponse = await fetch('http://localhost:5000/issuer/latest-vc', {
+      method: 'GET',
+    });*/
+
     
     if (!issuerResponse.ok) {
       throw new Error('Failed to issue credential');
