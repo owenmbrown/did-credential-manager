@@ -32,8 +32,9 @@ Tools/scripts that support development or were used during research.
 `/dev/identify-snap` -> Credential manager UI using Identify Snap (research artifact)
 
 ### Testing
+Tools/scripts used in unit testing. In order to use download the postman collection into postman
 
-`/tests` -> Unit and integration tests
+`/Postman` -> A collection of Postman requests with response checking scripts
 
 ## Getting Started
 
