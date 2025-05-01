@@ -167,10 +167,6 @@ await window.ethereum.request({
 });
 ```
 
-## Running Tests
-add info about tests
-
-
 ## Coding Style
 - Use **TypeScript** for all files.
 - Add **JSDoc/TypeDoc annotations** to all exported functions, types, and classes.
