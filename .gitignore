@@ -99,3 +99,19 @@ node_modules/
 yarn.lock
 .nvmrc
 dist/
+
+# DID Education Toolkit specific
+*.sqlite
+*.db
+holder-data/
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
