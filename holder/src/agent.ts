@@ -18,8 +18,8 @@ import {
   generateDid,
   logger,
 } from '@did-edu/common';
-import { CredentialStore, StoredCredential } from './storage/credential-store';
-import { VPBuilder, PresentationOptions } from './presentation/vp-builder';
+import { CredentialStore, StoredCredential } from './storage/credential-store.js';
+import { VPBuilder, PresentationOptions } from './presentation/vp-builder.js';
 
 /**
  * Agent configuration

@@ -7,7 +7,7 @@
  */
 
 import express, { Request, Response, Router } from 'express';
-import { HolderAgent } from '../agent';
+import { HolderAgent } from '../agent.js';
 import { logger } from '@did-edu/common';
 
 /**

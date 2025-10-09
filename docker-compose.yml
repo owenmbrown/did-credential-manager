@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  issuer:
+    build:
+      context: .
+      dockerfile: Dockerfile.issuer
+    container_name: did-issuer
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=production
+      - PORT=5001
+      - SERVICE_ENDPOINT=http://localhost:5001/didcomm
+    networks:
+      - did-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  holder:
+    build:
+      context: .
+      dockerfile: Dockerfile.holder
+    container_name: did-holder
+    ports:
+      - "5003:5003"
+    environment:
+      - NODE_ENV=production
+      - PORT=5003
+      - SERVICE_ENDPOINT=http://localhost:5003/didcomm
+      - DB_PATH=/data/holder-credentials.db
+    volumes:
+      - holder-data:/data
+    networks:
+      - did-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  verifier:
+    build:
+      context: .
+      dockerfile: Dockerfile.verifier
+    container_name: did-verifier
+    ports:
+      - "5002:5002"
+    environment:
+      - NODE_ENV=production
+      - PORT=5002
+      - SERVICE_ENDPOINT=http://localhost:5002/didcomm
+    networks:
+      - did-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  did-network:
+    driver: bridge
+
+volumes:
+  holder-data:
+    driver: local
+

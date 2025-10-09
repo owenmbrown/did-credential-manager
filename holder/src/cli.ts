@@ -8,7 +8,7 @@
  */
 
 import { Command } from 'commander';
-import { createHolderAgent, HolderAgent } from './agent';
+import { createHolderAgent, HolderAgent } from './agent.js';
 import { logger } from '@did-edu/common';
 import * as fs from 'fs';
 
