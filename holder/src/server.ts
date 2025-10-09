@@ -16,7 +16,7 @@ import { logger } from '@did-edu/common';
 // Load environment variables
 dotenv.config();
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5003;
 const SERVICE_ENDPOINT = process.env.SERVICE_ENDPOINT || `http://localhost:${PORT}/didcomm`;
 const DB_PATH = process.env.DB_PATH || './holder-credentials.db';
 

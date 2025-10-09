@@ -1,12 +1,14 @@
 {
   "name": "@did-edu/issuer",
   "version": "0.1.0",
+  "type": "module",
   "description": "DID credential issuer agent",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "dev": "nodemon",
+    "dev:build": "tsc && concurrently \"tsc --watch\" \"nodemon --watch dist dist/server.js\"",
     "start": "node dist/server.js",
     "clean": "rm -rf dist"
   },
@@ -26,7 +28,7 @@
     "@types/cors": "^2.8.0",
     "@types/node": "^20.0.0",
     "nodemon": "^3.0.0",
-    "ts-node": "^10.9.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.0.0"
   }
 }
