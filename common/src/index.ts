@@ -18,17 +18,17 @@ export {
   PrefixResolver,
   EphemeralSecretsResolver,
   SecretsManager,
-} from './didcomm/wrapper';
+} from './didcomm/wrapper.js';
 
-export { default as DIDPeer } from './didcomm/peer2';
-export * as DIDPeer4 from './didcomm/peer4';
+export { default as DIDPeer } from './didcomm/peer2.js';
+export * as DIDPeer4 from './didcomm/peer4.js';
 
 // Types exports
-export * from './types/credentials';
-export * from './types/messages';
+export * from './types/credentials.js';
+export * from './types/messages.js';
 
 // Utils exports
-export { default as logger, Logger, LogLevel, LogRecord, MessageRecord } from './utils/logger';
+export { default as logger, Logger, LogLevel, LogRecord, MessageRecord } from './utils/logger.js';
 
 // Re-export commonly used types from didcomm library
 export type {

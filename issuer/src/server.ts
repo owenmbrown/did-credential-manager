@@ -9,14 +9,14 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { createIssuerAgent } from './agent';
-import { createCredentialRoutes } from './routes/credentials';
+import { createIssuerAgent } from './agent.js';
+import { createCredentialRoutes } from './routes/credentials.js';
 import { logger } from '@did-edu/common';
 
 // Load environment variables
 dotenv.config();
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 const SERVICE_ENDPOINT = process.env.SERVICE_ENDPOINT || `http://localhost:${PORT}/didcomm`;
 
 /**

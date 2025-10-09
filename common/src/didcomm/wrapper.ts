@@ -11,24 +11,28 @@ import {
   edwardsToMontgomeryPub,
   edwardsToMontgomeryPriv,
 } from '@noble/curves/ed25519';
-import {
+import * as DIDCommLib from 'didcomm';
+import type {
   DIDResolver,
   DIDDoc,
   SecretsResolver,
   Secret,
-  Message,
   UnpackMetadata,
   PackEncryptedMetadata,
   MessagingServiceMetadata,
   IMessage,
   Service,
+  Message as MessageType,
 } from 'didcomm';
-import DIDPeer from './peer2';
-import * as DIDPeer4 from './peer4';
+import DIDPeer from './peer2.js';
+import * as DIDPeer4 from './peer4.js';
 import { v4 as uuidv4 } from 'uuid';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 import * as multibase from 'multibase';
 import * as multicodec from 'multicodec';
+
+// Re-export Message class from didcomm
+const { Message } = DIDCommLib;
 
 export type DID = string;
 
@@ -429,7 +433,7 @@ export class DIDComm {
   /**
    * Unpack a DIDComm message
    */
-  async unpackMessage(message: string): Promise<[Message, UnpackMetadata]> {
+  async unpackMessage(message: string): Promise<[MessageType, UnpackMetadata]> {
     return await Message.unpack(message, this.resolver, this.secretsResolver, {});
   }
 
@@ -440,7 +444,7 @@ export class DIDComm {
     to: DID,
     from: DID,
     message: DIDCommMessage
-  ): Promise<[Message, UnpackMetadata] | undefined> {
+  ): Promise<[MessageType, UnpackMetadata] | undefined> {
     const [plaintext, packed, meta] = await this.prepareMessage(to, from, message);
     logger.sentMessage({ to, from, message: plaintext });
     
@@ -518,7 +522,7 @@ export class DIDComm {
   /**
    * Receive and unpack a DIDComm message
    */
-  async receiveMessage(message: string): Promise<[Message, UnpackMetadata]> {
+  async receiveMessage(message: string): Promise<[MessageType, UnpackMetadata]> {
     const unpacked = await Message.unpack(message, this.resolver, this.secretsResolver, {});
     const plaintext = unpacked[0].as_value();
     logger.recvMessage({

@@ -9,8 +9,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { createVerifierAgent } from './agent';
-import { createVerifierRoutes } from './routes/verifier-routes';
+import { createVerifierAgent } from './agent.js';
+import { createVerifierRoutes } from './routes/verifier-routes.js';
 import { logger } from '@did-edu/common';
 
 // Load environment variables
@@ -116,4 +116,5 @@ async function startServer() {
 
 // Start the server
 startServer();
+
 

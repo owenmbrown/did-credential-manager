@@ -99,6 +99,16 @@ export class DIDPeerProvider extends AbstractIdentifierProvider {
   }
 
   /**
+   * Update a did:peer identifier (not supported for did:peer)
+   */
+  async updateIdentifier(
+    args: { did: string; kms?: string | undefined; alias?: string | undefined; options?: any },
+    context: IContext
+  ): Promise<IIdentifier> {
+    throw new Error('Updating did:peer identifiers is not supported. Create a new DID instead.');
+  }
+
+  /**
    * Delete a did:peer identifier (not supported for did:peer)
    */
   async deleteIdentifier(

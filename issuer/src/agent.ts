@@ -82,7 +82,7 @@ export class IssuerAgent {
       this.issuerDid = await this.didcomm.generateDid(serviceEndpoint);
       logger.info(`Issuer DID created: ${this.issuerDid}`);
     }
-    return this.issuerDid;
+    return this.issuerDid!;
   }
 
   /**
