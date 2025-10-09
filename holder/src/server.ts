@@ -9,8 +9,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { createHolderAgent } from './agent';
-import { createHolderRoutes } from './routes/holder-routes';
+import { createHolderAgent } from './agent.js';
+import { createHolderRoutes } from './routes/holder-routes.js';
 import { logger } from '@did-edu/common';
 
 // Load environment variables

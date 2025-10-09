@@ -17,8 +17,8 @@ import {
   generateDid,
   logger,
 } from '@did-edu/common';
-import { ChallengeManager, Challenge } from './challenge/challenge-manager';
-import { Verifier, VerificationPolicy, VerificationResult } from './verification/verifier';
+import { ChallengeManager, Challenge } from './challenge/challenge-manager.js';
+import { Verifier, VerificationPolicy, VerificationResult } from './verification/verifier.js';
 
 /**
  * Agent configuration
