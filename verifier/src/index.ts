@@ -9,3 +9,4 @@ export { ChallengeManager, Challenge } from './challenge/challenge-manager';
 export { Verifier, VerificationResult, VerificationPolicy } from './verification/verifier';
 export { createVerifierRoutes } from './routes/verifier-routes';
 
+

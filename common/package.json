@@ -1,6 +1,7 @@
 {
   "name": "@did-edu/common",
   "version": "0.1.0",
+  "type": "module",
   "description": "Shared utilities and DIDComm implementation",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

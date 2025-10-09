@@ -7,7 +7,7 @@
  * @module peer4
  */
 
-import * as bs58 from 'bs58';
+import bs58 from 'bs58';
 import * as varint from 'varint';
 
 type Document = Record<string, any>;

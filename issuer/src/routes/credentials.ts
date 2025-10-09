@@ -7,7 +7,7 @@
  */
 
 import express, { Request, Response, Router } from 'express';
-import { IssuerAgent } from '../agent';
+import { IssuerAgent } from '../agent.js';
 import { logger } from '@did-edu/common';
 
 /**

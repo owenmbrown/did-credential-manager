@@ -9,3 +9,4 @@ export { CredentialStore, StoredCredential, CredentialQuery } from './storage/cr
 export { VPBuilder, PresentationOptions, SelectiveDisclosureOptions } from './presentation/vp-builder';
 export { createHolderRoutes } from './routes/holder-routes';
 
+

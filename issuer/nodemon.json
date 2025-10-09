@@ -1,10 +1,11 @@
 {
   "watch": ["src"],
   "ext": "ts",
-  "exec": "ts-node src/server.ts",
+  "exec": "node --experimental-wasm-modules --import tsx/esm src/server.ts",
   "ignore": ["src/**/*.test.ts"],
   "env": {
-    "NODE_ENV": "development"
+    "NODE_ENV": "development",
+    "NODE_NO_WARNINGS": "1"
   }
 }
 
