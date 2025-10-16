@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 6, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
-    {"offset": {"line": 48, "column": 0}, "map": {"version":3,"sources":["file:///home/outlaw/Capstone-Kyndryl-project/bank-app/app/account/page.tsx"],"sourcesContent":["import { useSession } from '../context/sessionContext';\r\nimport { useRouter } from 'next/router';\r\n\r\nconst AccountPage = () => {\r\n  const { isLoggedIn } = useSession();\r\n  const router = useRouter();\r\n\r\n  if (!isLoggedIn) {\r\n    router.push('/login');\r\n    return null;\r\n  }\r\n\r\n  return (\r\n    <div className=\"min-h-screen flex flex-col items-center justify-center bg-gray-100\">\r\n      <div className=\"bg-white p-8 rounded-lg shadow-lg w-full max-w-md\">\r\n        <h1 className=\"text-3xl font-bold mb-4\">Your Account Information</h1>\r\n        <p className=\"text-lg\">Account details go here...</p>\r\n      </div>\r\n    </div>\r\n  );\r\n};\r\n\r\nexport default AccountPage;\r\n"],"names":[],"mappings":";;;;AAAA;AACA;;;;AAEA,MAAM,cAAc;IAClB,MAAM,EAAE,UAAU,EAAE,GAAG,CAAA,GAAA,iIAAA,CAAA,aAAU,AAAD;IAChC,MAAM,SAAS,CAAA,GAAA,8HAAA,CAAA,YAAS,AAAD;IAEvB,IAAI,CAAC,YAAY;QACf,OAAO,IAAI,CAAC;QACZ,OAAO;IACT;IAEA,qBACE,8OAAC;QAAI,WAAU;kBACb,cAAA,8OAAC;YAAI,WAAU;;8BACb,8OAAC;oBAAG,WAAU;8BAA0B;;;;;;8BACxC,8OAAC;oBAAE,WAAU;8BAAU;;;;;;;;;;;;;;;;;AAI/B;uCAEe","debugId":null}}]
-}

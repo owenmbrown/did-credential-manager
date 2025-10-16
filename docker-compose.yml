@@ -4,7 +4,7 @@ services:
   issuer:
     build:
       context: .
-      dockerfile: Dockerfile.issuer
+      dockerfile: issuer/Dockerfile
     container_name: did-issuer
     ports:
       - "5001:5001"
@@ -25,7 +25,7 @@ services:
   holder:
     build:
       context: .
-      dockerfile: Dockerfile.holder
+      dockerfile: holder/Dockerfile
     container_name: did-holder
     ports:
       - "5003:5003"
@@ -49,7 +49,7 @@ services:
   verifier:
     build:
       context: .
-      dockerfile: Dockerfile.verifier
+      dockerfile: verifier/Dockerfile
     container_name: did-verifier
     ports:
       - "5002:5002"
