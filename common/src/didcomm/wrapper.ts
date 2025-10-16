@@ -182,8 +182,8 @@ export class DIDPeer4Resolver implements DIDResolver {
   async resolve(did: DID): Promise<DIDDoc | null> {
     const raw_doc = await DIDPeer4.resolve(did);
     const fix_vms = async (vms: Array<Record<string, any>>) => {
-      let methods = vms.map((k: Record<string, any>) => {
-        let new_method = {
+      const methods = vms.map((k: Record<string, any>) => {
+        const new_method = {
           id: `${did}${k.id}`,
           type: k.type,
           controller: k.controller,

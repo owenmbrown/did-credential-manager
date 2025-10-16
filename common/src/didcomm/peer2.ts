@@ -49,7 +49,7 @@ export default class DIDPeer {
    * Base64 URL encode a string
    */
   static base64UrlEncode(input: string): string {
-    let base64 = btoa(input);
+    const base64 = btoa(input);
     return base64.replace('+', '-').replace('/', '_').replace(/=+$/, ''); // remove trailing '=' characters
   }
 
@@ -210,7 +210,7 @@ export default class DIDPeer {
           if (!doc.verificationMethod) {
             doc.verificationMethod = [];
           }
-          let ident = `${did}#key-${keyIndex++}`;
+          const ident = `${did}#key-${keyIndex++}`;
           doc.verificationMethod.push({
             id: ident,
             controller: did,
@@ -229,7 +229,7 @@ export default class DIDPeer {
           if (!doc.verificationMethod) {
             doc.verificationMethod = [];
           }
-          let ident = `${did}#key-${keyIndex++}`;
+          const ident = `${did}#key-${keyIndex++}`;
           doc.verificationMethod.push({
             id: ident,
             controller: did,
@@ -250,7 +250,7 @@ export default class DIDPeer {
             .map(DIDPeer.expandCommonStringAbbreviations)
             .map((service: any) => {
               if (!('id' in service)) {
-                let suffix = serviceIndex++ > 0 ? `-${serviceIndex}` : '';
+                const suffix = serviceIndex++ > 0 ? `-${serviceIndex}` : '';
                 service.id = `#service${suffix}`;
               }
               return service;

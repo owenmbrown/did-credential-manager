@@ -11,10 +11,8 @@ import { DIDResolverPlugin } from '@veramo/did-resolver';
 import { Resolver } from 'did-resolver';
 import {
   DIDComm,
-  DID,
   PrefixResolver,
   EphemeralSecretsResolver,
-  generateDid,
   logger,
 } from '@did-edu/common';
 import { ChallengeManager, Challenge } from './challenge/challenge-manager.js';
@@ -241,7 +239,7 @@ export class VerifierAgent {
    * Handle incoming DIDComm message
    */
   async handleMessage(packedMessage: string): Promise<any> {
-    const [message, metadata] = await this.didcomm.receiveMessage(packedMessage);
+    const [message, _] = await this.didcomm.receiveMessage(packedMessage);
     const plaintext = message.as_value();
 
     logger.info(`Received message: ${plaintext.type}`);

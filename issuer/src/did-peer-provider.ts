@@ -85,7 +85,6 @@ export class DIDPeerProvider extends AbstractIdentifierProvider {
     }
 
     // Store the secrets in a way Veramo can access them
-    // Note: In production, these should be stored securely
     const privateKeyData = {
       secrets: secrets,
     };
@@ -155,7 +154,7 @@ export class DIDPeerProvider extends AbstractIdentifierProvider {
    */
   async removeService(
     args: { identifier: IIdentifier; id: string; options?: any },
-    context: IContext
+    _: IContext
   ): Promise<any> {
     throw new Error('Removing services from did:peer identifiers is not supported.');
   }

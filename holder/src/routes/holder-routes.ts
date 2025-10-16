@@ -183,7 +183,7 @@ export function createHolderRoutes(agent: HolderAgent): Router {
       }
 
       // If credentials are IDs, fetch them from storage
-      let fullCredentials = [];
+      const fullCredentials = [];
       for (const credOrId of credentials) {
         if (typeof credOrId === 'string') {
           const stored = await agent.getCredential(credOrId);
