@@ -6,11 +6,7 @@
  * @module wrapper
  */
 
-import {
-  ed25519,
-  edwardsToMontgomeryPub,
-  edwardsToMontgomeryPriv,
-} from '@noble/curves/ed25519';
+import { ed25519 } from '@noble/curves/ed25519';
 import * as DIDCommLib from 'didcomm';
 import type {
   DIDResolver,
@@ -75,10 +71,10 @@ async function ed25519ToSecret(
  * @returns Object containing the DID and associated secrets
  */
 export async function generateDidForMediator(): Promise<{ did: DID; secrets: Secret[] }> {
-  const key = ed25519.utils.randomPrivateKey();
-  const enckeyPriv = edwardsToMontgomeryPriv(key);
+  const key = ed25519.utils.randomSecretKey();
+  const enckeyPriv = ed25519.utils.toMontgomerySecret(key);
   const verkey = ed25519.getPublicKey(key);
-  const enckey = edwardsToMontgomeryPub(verkey);
+  const enckey = ed25519.utils.toMontgomery(verkey);
   const service = {
     type: 'DIDCommMessaging',
     id: '#service',
@@ -123,10 +119,10 @@ export async function generateDidForMediator(): Promise<{ did: DID; secrets: Sec
  * @returns Object containing the DID and associated secrets
  */
 export async function generateDid(routingDid: DID): Promise<{ did: DID; secrets: Secret[] }> {
-  const key = ed25519.utils.randomPrivateKey();
-  const enckeyPriv = edwardsToMontgomeryPriv(key);
+  const key = ed25519.utils.randomSecretKey();
+  const enckeyPriv = ed25519.utils.toMontgomerySecret(key);
   const verkey = ed25519.getPublicKey(key);
-  const enckey = edwardsToMontgomeryPub(verkey);
+  const enckey = ed25519.utils.toMontgomery(verkey);
   const service = {
     type: 'DIDCommMessaging',
     id: '#service',
