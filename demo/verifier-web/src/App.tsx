@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { api } from '../api/client'
+import { api } from './api/client'
 
-export default function Verifier() {
+export default function App() {
   const [did, setDid] = useState<string>('')
   const [health, setHealth] = useState<any>(null)
-  const [input, setInput] = useState<string>('')
+  const [credInput, setCredInput] = useState<string>('')
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [requestedTypes, setRequestedTypes] = useState('DemoCredential')
@@ -12,16 +12,16 @@ export default function Verifier() {
   const [vpInput, setVpInput] = useState<string>('')
 
   useEffect(() => {
-    api.verifier.did().then((d) => setDid(d.did)).catch(() => {})
-    api.verifier.health().then(setHealth).catch(() => {})
+    api.did().then((d) => setDid(d.did)).catch(() => {})
+    api.health().then(setHealth).catch(() => {})
   }, [])
 
-  async function verify() {
+  async function verifyCred() {
     setError(null)
     setResult(null)
     try {
-      const credential = JSON.parse(input)
-      const res = await api.verifier.verifyCredential(credential)
+      const credential = JSON.parse(credInput)
+      const res = await api.verifyCredential(credential)
       setResult(res)
     } catch (e: any) {
       setError(e.message)
@@ -29,14 +29,15 @@ export default function Verifier() {
   }
 
   return (
-    <div>
-      <h2>Verifier</h2>
+    <div style={{ padding: 16, fontFamily: 'system-ui, sans-serif' }}>
+      <h1>Verifier</h1>
       <p>DID: {did || '...'}</p>
       <pre style={{ background: '#f6f6f6', padding: 8 }}>{health ? JSON.stringify(health, null, 2) : 'loading health...'}</pre>
+
       <h3>Verify Credential</h3>
-      <textarea value={input} onChange={(e) => setInput(e.target.value)} placeholder="Paste a credential JSON here" rows={10} style={{ width: '100%', maxWidth: 800 }} />
+      <textarea value={credInput} onChange={(e) => setCredInput(e.target.value)} placeholder="Paste a credential JSON here" rows={10} style={{ width: '100%', maxWidth: 800 }} />
       <div style={{ marginTop: 8 }}>
-        <button onClick={verify}>Verify</button>
+        <button onClick={verifyCred}>Verify</button>
       </div>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {result && (
@@ -48,10 +49,10 @@ export default function Verifier() {
 
       <h3 style={{ marginTop: 24 }}>Create OOB Presentation Request</h3>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <input value={requestedTypes} onChange={(e) => setRequestedTypes(e.target.value)} placeholder="requested credential types (comma separated)" />
+        <input value={requestedTypes} onChange={(e) => setRequestedTypes(e.target.value)} placeholder="requested types (comma separated)" />
         <button
           onClick={async () => {
-            const resp = await api.verifier.createPresentationRequestInvitation({
+            const resp = await api.createPresentationRequestInvitation({
               requestedCredentials: requestedTypes.split(',').map((s) => s.trim()).filter(Boolean),
               ttl: 3600,
             })
@@ -81,7 +82,7 @@ export default function Verifier() {
           onClick={async () => {
             try {
               const presentation = JSON.parse(vpInput)
-              const res = await api.verifier.verifyPresentation({ presentation, challenge: invite?.challenge })
+              const res = await api.verifyPresentation({ presentation, challenge: invite?.challenge })
               setResult(res)
             } catch (e: any) {
               setError(e.message)
