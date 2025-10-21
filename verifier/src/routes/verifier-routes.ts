@@ -8,7 +8,7 @@
 
 import express, { Request, Response, Router } from 'express';
 import { VerifierAgent } from '../agent.js';
-import { logger } from '@did-edu/common';
+import { logger, OOBProtocol } from '@did-edu/common';
 
 /**
  * Create verifier routes
@@ -192,6 +192,71 @@ export function createVerifierRoutes(agent: VerifierAgent): Router {
       });
     } catch (error: any) {
       logger.error('Error requesting presentation:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  /**
+   * POST /invitations/presentation-request
+   * Generate an OOB invitation with a presentation request
+   * 
+   * Body:
+   * {
+   *   "requestedCredentials": ["DriversLicense", "UniversityDegree"], // array of credential types
+   *   "ttl": 3600 // optional, time-to-live in seconds
+   * }
+   * 
+   * Returns invitation with QR code
+   */
+  router.post('/invitations/presentation-request', async (req: Request, res: Response) => {
+    try {
+      const { requestedCredentials, ttl } = req.body;
+
+      // Validate input
+      if (!requestedCredentials || !Array.isArray(requestedCredentials) || requestedCredentials.length === 0) {
+        res.status(400).json({ error: 'requestedCredentials array is required' });
+        return;
+      }
+
+      const verifierDid = agent.getDid();
+
+      // Generate a challenge for this request
+      const { challenge } = agent.generateChallenge({
+        domain: verifierDid,
+        ttlMinutes: ttl ? Math.floor(ttl / 60) : 5,
+      });
+
+      // Create OOB invitation with presentation request
+      const invitation = OOBProtocol.createPresentationRequestInvitation(
+        verifierDid,
+        requestedCredentials,
+        challenge,
+        { ttl }
+      );
+
+      // Get base URL for this service
+      const baseUrl = `${req.protocol}://${req.get('host')}/didcomm`;
+      
+      // Generate invitation URL
+      const invitationUrl = OOBProtocol.createInvitationUrl(invitation, baseUrl);
+      
+      // Generate QR code
+      const qrCode = await OOBProtocol.generateQRCode(invitation, baseUrl);
+
+      logger.info('OOB presentation request invitation created', {
+        requestedCredentials,
+        invitationId: invitation['@id'],
+        challenge,
+      });
+
+      res.json({
+        invitation,
+        invitationUrl,
+        qrCode, // Base64 data URL
+        challenge, // Include challenge for reference
+      });
+    } catch (error: any) {
+      logger.error('Error creating OOB invitation:', error);
       res.status(500).json({ error: error.message });
     }
   });

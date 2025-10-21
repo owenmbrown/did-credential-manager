@@ -8,7 +8,7 @@
 
 import express, { Request, Response, Router } from 'express';
 import { IssuerAgent } from '../agent.js';
-import { logger } from '@did-edu/common';
+import { logger, OOBProtocol } from '@did-edu/common';
 
 /**
  * Create credential routes
@@ -129,6 +129,113 @@ export function createCredentialRoutes(agent: IssuerAgent): Router {
       });
     } catch (error: any) {
       logger.error('Error sending credential offer:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  /**
+   * POST /invitations/credential-offer
+   * Generate an OOB invitation with a credential offer
+   * 
+   * Body:
+   * {
+   *   "credentialType": "DriversLicense",
+   *   "credentialData": {
+   *     "name": "John Doe",
+   *     "age": 25,
+   *     ...
+   *   },
+   *   "ttl": 3600 // optional, time-to-live in seconds
+   * }
+   * 
+   * Returns invitation with QR code
+   */
+  router.post('/invitations/credential-offer', async (req: Request, res: Response) => {
+    try {
+      const { credentialType, credentialData, ttl } = req.body;
+
+      // Validate input
+      if (!credentialType) {
+        res.status(400).json({ error: 'credentialType is required' });
+        return;
+      }
+
+      if (!credentialData || typeof credentialData !== 'object') {
+        res.status(400).json({ error: 'credentialData object is required' });
+        return;
+      }
+
+      const issuerDid = agent.getDid();
+
+      // Create OOB invitation with credential offer
+      const invitation = OOBProtocol.createCredentialOfferInvitation(
+        issuerDid,
+        credentialType,
+        credentialData,
+        { ttl }
+      );
+
+      // Get base URL for this service
+      const baseUrl = `${req.protocol}://${req.get('host')}/didcomm`;
+      
+      // Generate invitation URL
+      const invitationUrl = OOBProtocol.createInvitationUrl(invitation, baseUrl);
+      
+      // Generate QR code
+      const qrCode = await OOBProtocol.generateQRCode(invitation, baseUrl);
+
+      logger.info('OOB credential offer invitation created', {
+        credentialType,
+        invitationId: invitation['@id'],
+      });
+
+      res.json({
+        invitation,
+        invitationUrl,
+        qrCode, // Base64 data URL
+      });
+    } catch (error: any) {
+      logger.error('Error creating OOB invitation:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  /**
+   * GET /invitations/:invitationId
+   * Accept OOB invitation (for testing via browser)
+   * 
+   * Query params:
+   *   oob: Base64-encoded invitation
+   */
+  router.get('/invitations/accept', async (req: Request, res: Response) => {
+    try {
+      const oobParam = req.query.oob as string;
+
+      if (!oobParam) {
+        res.status(400).json({ error: 'Missing oob query parameter' });
+        return;
+      }
+
+      // Parse the invitation
+      const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+      const parsed = OOBProtocol.parseInvitationUrl(fullUrl);
+
+      logger.info('OOB invitation received', {
+        from: parsed.from,
+        goal: parsed.goal,
+        isExpired: parsed.isExpired,
+      });
+
+      res.json({
+        invitation: parsed.invitation,
+        from: parsed.from,
+        goal: parsed.goal,
+        goalCode: parsed.goalCode,
+        isExpired: parsed.isExpired,
+        attachments: parsed.attachments,
+      });
+    } catch (error: any) {
+      logger.error('Error accepting OOB invitation:', error);
       res.status(500).json({ error: error.message });
     }
   });

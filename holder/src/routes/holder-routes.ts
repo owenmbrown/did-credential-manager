@@ -8,7 +8,7 @@
 
 import express, { Request, Response, Router } from 'express';
 import { HolderAgent } from '../agent.js';
-import { logger } from '@did-edu/common';
+import { logger, OOBProtocol } from '@did-edu/common';
 
 /**
  * Create holder routes
@@ -252,6 +252,68 @@ export function createHolderRoutes(agent: HolderAgent): Router {
       });
     } catch (error: any) {
       logger.error('Error sending presentation:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  /**
+   * POST /invitations/accept
+   * Accept an OOB invitation
+   * 
+   * Body:
+   * {
+   *   "invitationUrl": "https://..." or
+   *   "invitation": { ... OOB invitation object }
+   * }
+   */
+  router.post('/invitations/accept', async (req: Request, res: Response) => {
+    try {
+      const { invitationUrl, invitation } = req.body;
+
+      if (!invitationUrl && !invitation) {
+        res.status(400).json({ error: 'Either invitationUrl or invitation is required' });
+        return;
+      }
+
+      // Parse invitation
+      let parsed;
+      if (invitationUrl) {
+        parsed = OOBProtocol.parseInvitationUrl(invitationUrl);
+      } else {
+        parsed = OOBProtocol.parseInvitation(invitation);
+      }
+
+      // Validate invitation
+      if (parsed.isExpired) {
+        res.status(400).json({ error: 'Invitation has expired' });
+        return;
+      }
+
+      // Check for credential offer
+      const credentialOffer = OOBProtocol.extractCredentialOffer(parsed.invitation);
+      
+      // Check for presentation request
+      const presentationRequest = OOBProtocol.extractPresentationRequest(parsed.invitation);
+
+      logger.info('OOB invitation accepted', {
+        from: parsed.from,
+        goalCode: parsed.goalCode,
+        hasCredentialOffer: !!credentialOffer,
+        hasPresentationRequest: !!presentationRequest,
+      });
+
+      res.json({
+        success: true,
+        invitation: parsed.invitation,
+        from: parsed.from,
+        goal: parsed.goal,
+        goalCode: parsed.goalCode,
+        credentialOffer,
+        presentationRequest,
+        message: 'Invitation accepted. Use the appropriate endpoint to respond.',
+      });
+    } catch (error: any) {
+      logger.error('Error accepting OOB invitation:', error);
       res.status(500).json({ error: error.message });
     }
   });

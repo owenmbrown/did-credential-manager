@@ -46,105 +46,15 @@ export interface AttachmentData {
 }
 
 /**
- * Out-of-Band invitation
+ * Note: OOB, Issue Credential, Present Proof, and Basic Message types
+ * are now defined in their respective protocol files:
+ * - protocols/oob.ts
+ * - protocols/issue-credential.ts
+ * - protocols/present-proof.ts
+ * - protocols/basic-message.ts
+ * 
+ * Import from those files or from the main index.
  */
-export interface OOBInvitation {
-  type: string;
-  id: string;
-  from: string;
-  body: {
-    goal_code?: string;
-    goal?: string;
-    accept?: string[];
-  };
-  attachments?: Attachment[];
-}
-
-/**
- * Issue Credential 3.0 - Offer Credential
- */
-export interface OfferCredentialMessage extends BaseDIDCommMessage {
-  type: 'https://didcomm.org/issue-credential/3.0/offer-credential';
-  body: {
-    goal_code?: string;
-    comment?: string;
-    credential_preview: {
-      type: string;
-      attributes: Array<{
-        name: string;
-        value: any;
-      }>;
-    };
-    formats: Array<{
-      attach_id: string;
-      format: string;
-    }>;
-  };
-}
-
-/**
- * Issue Credential 3.0 - Request Credential
- */
-export interface RequestCredentialMessage extends BaseDIDCommMessage {
-  type: 'https://didcomm.org/issue-credential/3.0/request-credential';
-  body: {
-    goal_code?: string;
-    comment?: string;
-    formats: Array<{
-      attach_id: string;
-      format: string;
-    }>;
-  };
-}
-
-/**
- * Issue Credential 3.0 - Issue Credential
- */
-export interface IssueCredentialMessage extends BaseDIDCommMessage {
-  type: 'https://didcomm.org/issue-credential/3.0/issue-credential';
-  body: {
-    goal_code?: string;
-    comment?: string;
-    formats: Array<{
-      attach_id: string;
-      format: string;
-    }>;
-  };
-  attachments: Array<{
-    id: string;
-    format: string;
-    data: {
-      json?: any;
-      base64?: string;
-    };
-  }>;
-}
-
-/**
- * Present Proof 3.0 - Request Presentation
- */
-export interface RequestPresentationMessage extends BaseDIDCommMessage {
-  type: 'https://didcomm.org/present-proof/3.0/request-presentation';
-  body: {
-    goal_code?: string;
-    comment?: string;
-    will_confirm?: boolean;
-    formats: Array<{
-      attach_id: string;
-      format: string;
-    }>;
-  };
-  attachments: Array<{
-    id: string;
-    data: {
-      json: {
-        challenge: string;
-        domain?: string;
-        presentation_definition?: any;
-      };
-    };
-  }>;
-}
 
 /**
  * Present Proof 3.0 - Presentation
@@ -238,31 +148,15 @@ export interface DiscoverFeaturesDiscloseMessage extends BaseDIDCommMessage {
 }
 
 /**
- * Basic Message 2.0
- */
-export interface BasicMessage extends BaseDIDCommMessage {
-  type: 'https://didcomm.org/basicmessage/2.0/message';
-  body: {
-    content: string;
-    sent_time?: string;
-    locale?: string;
-  };
-}
-
-/**
  * Protocol message types union
+ * Note: Some types are now defined in protocol files
  */
 export type ProtocolMessage =
-  | OfferCredentialMessage
-  | RequestCredentialMessage
-  | IssueCredentialMessage
-  | RequestPresentationMessage
   | PresentationMessage
   | AckMessage
   | ProblemReportMessage
   | TrustPingMessage
   | TrustPingResponseMessage
   | DiscoverFeaturesQueryMessage
-  | DiscoverFeaturesDiscloseMessage
-  | BasicMessage;
+  | DiscoverFeaturesDiscloseMessage;
 
