@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@noble/curves": "^1.2.0",
+    "better-sqlite3": "^9.0.0",
     "bs58": "^5.0.0",
     "didcomm": "^0.4.1",
     "multibase": "^4.0.6",
@@ -23,6 +24,7 @@
     "varint": "^6.0.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
     "@types/bs58": "^4.0.0",
     "@types/node": "^20.0.0",
     "@types/node-fetch": "^2.6.0",
