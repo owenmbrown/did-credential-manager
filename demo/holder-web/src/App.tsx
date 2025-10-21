@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { api } from '../api/client'
+import { api } from './api/client'
 
-export default function Holder() {
+export default function App() {
   const [did, setDid] = useState<string>('')
   const [health, setHealth] = useState<any>(null)
   const [creds, setCreds] = useState<any[]>([])
@@ -13,14 +13,14 @@ export default function Holder() {
   const [vcInput, setVcInput] = useState('')
 
   useEffect(() => {
-    api.holder.did().then((d) => setDid(d.did)).catch(() => {})
-    api.holder.health().then(setHealth).catch(() => {})
-    api.holder.credentials().then((r) => setCreds(r.credentials)).catch(() => {})
+    api.did().then((d) => setDid(d.did)).catch(() => {})
+    api.health().then(setHealth).catch(() => {})
+    api.credentials().then((r) => setCreds(r.credentials)).catch(() => {})
   }, [])
 
   return (
-    <div>
-      <h2>Holder</h2>
+    <div style={{ padding: 16, fontFamily: 'system-ui, sans-serif' }}>
+      <h1>Holder</h1>
       <p>DID: {did || '...'}</p>
       <pre style={{ background: '#f6f6f6', padding: 8 }}>{health ? JSON.stringify(health, null, 2) : 'loading health...'}</pre>
       <h3>Stored Credentials ({creds.length})</h3>
@@ -29,7 +29,7 @@ export default function Holder() {
           <details key={c.id} style={{ marginBottom: 8 }}>
             <summary>{c.id}</summary>
             <pre style={{ background: '#f6f6f6', padding: 8 }}>{JSON.stringify(c, null, 2)}</pre>
-            <button onClick={async () => { await api.holder.deleteCredential(c.id); const r = await api.holder.credentials(); setCreds(r.credentials) }}>Delete</button>
+            <button onClick={async () => { await api.deleteCredential(c.id); const r = await api.credentials(); setCreds(r.credentials) }}>Delete</button>
           </details>
         ))}
       </div>
@@ -37,7 +37,7 @@ export default function Holder() {
       <h3 style={{ marginTop: 24 }}>Accept Invitation</h3>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <input value={inviteUrl} onChange={(e) => setInviteUrl(e.target.value)} placeholder="Paste invitation URL here" style={{ minWidth: 400 }} />
-        <button onClick={async () => { await api.holder.acceptInvitation({ invitationUrl: inviteUrl }); }}>Accept</button>
+        <button onClick={async () => { await api.acceptInvitation({ invitationUrl: inviteUrl }); }}>Accept</button>
       </div>
 
       <h3 style={{ marginTop: 24 }}>Store Credential (manual)</h3>
@@ -47,12 +47,12 @@ export default function Holder() {
           onClick={async () => {
             try {
               const credential = JSON.parse(vcInput)
-              await api.holder.storeCredential(credential)
-              const r = await api.holder.credentials()
+              await api.storeCredential(credential)
+              const r = await api.credentials()
               setCreds(r.credentials)
               setVcInput('')
-            } catch (e) {
-              // ignore simple parse errors here for now
+            } catch {
+              // ignore parse errors for demo
             }
           }}
         >
@@ -67,9 +67,9 @@ export default function Holder() {
         <input value={vpDomain} onChange={(e) => setVpDomain(e.target.value)} placeholder="domain (optional)" />
         <button
           onClick={async () => {
-            const idsOrCreds = await api.holder.credentials();
+            const idsOrCreds = await api.credentials();
             if (!idsOrCreds.credentials?.length) return;
-            const r = await api.holder.createPresentation({
+            const r = await api.createPresentation({
               credentials: idsOrCreds.credentials.map((x: any) => x.id ?? x),
               challenge: vpChallenge || undefined,
               domain: vpDomain || undefined,
@@ -94,7 +94,7 @@ export default function Holder() {
         <button
           onClick={async () => {
             if (!presentation || !verifierDid) return
-            await api.holder.sendPresentation({ verifierDid, presentation })
+            await api.sendPresentation({ verifierDid, presentation })
           }}
         >
           Send VP via DIDComm
