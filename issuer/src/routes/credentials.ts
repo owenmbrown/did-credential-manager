@@ -9,6 +9,47 @@
 import express, { Request, Response, Router } from 'express';
 import { IssuerAgent } from '../agent.js';
 import { logger, OOBProtocol } from '@did-edu/common';
+import { v4 as uuidv4 } from 'uuid';
+
+/**
+ * In-memory store for OOB invitations (for QR code short URLs)
+ * In production, use Redis or a database
+ */
+const invitationStore = new Map<string, any>();
+
+/**
+ * Store an invitation and return a short ID
+ */
+function storeInvitation(invitation: any, ttlSeconds: number = 3600): string {
+  const shortId = uuidv4().split('-')[0]; // Use first segment for shorter URL
+  invitationStore.set(shortId, {
+    invitation,
+    expiresAt: Date.now() + (ttlSeconds * 1000),
+  });
+  
+  // Clean up expired invitations
+  setTimeout(() => {
+    invitationStore.delete(shortId);
+  }, ttlSeconds * 1000);
+  
+  return shortId;
+}
+
+/**
+ * Retrieve an invitation by short ID
+ */
+function getInvitation(shortId: string): any | null {
+  const stored = invitationStore.get(shortId);
+  if (!stored) return null;
+  
+  // Check expiration
+  if (Date.now() > stored.expiresAt) {
+    invitationStore.delete(shortId);
+    return null;
+  }
+  
+  return stored.invitation;
+}
 
 /**
  * Create credential routes
@@ -176,23 +217,31 @@ export function createCredentialRoutes(agent: IssuerAgent): Router {
       );
 
       // Get base URL for this service
-      const baseUrl = `${req.protocol}://${req.get('host')}/didcomm`;
+      const protocol = req.protocol;
+      const host = req.get('host');
+      const baseUrl = `${protocol}://${host}/didcomm`;
       
-      // Generate invitation URL
+      // Generate full invitation URL (for manual sharing)
       const invitationUrl = OOBProtocol.createInvitationUrl(invitation, baseUrl);
       
-      // Generate QR code
-      const qrCode = await OOBProtocol.generateQRCode(invitation, baseUrl);
+      // For QR code: Store invitation and create short URL
+      const shortId = storeInvitation(invitation, ttl || 3600);
+      const shortUrl = `${protocol}://${host}/invitations/${shortId}`;
+      
+      // Generate QR code with short URL
+      const qrCode = await OOBProtocol.generateQRCode(invitation, shortUrl);
 
       logger.info('OOB credential offer invitation created', {
         credentialType,
         invitationId: invitation['@id'],
+        shortId,
       });
 
       res.json({
         invitation,
-        invitationUrl,
-        qrCode, // Base64 data URL
+        invitationUrl,     // Full URL for manual sharing
+        qrCodeUrl: shortUrl, // Short URL in QR code
+        qrCode,            // Base64 data URL
       });
     } catch (error: any) {
       logger.error('Error creating OOB invitation:', error);
@@ -201,7 +250,43 @@ export function createCredentialRoutes(agent: IssuerAgent): Router {
   });
 
   /**
-   * GET /invitations/:invitationId
+   * GET /invitations/:shortId
+   * Retrieve an invitation by short ID (for QR code scans)
+   */
+  router.get('/invitations/:shortId', async (req: Request, res: Response) => {
+    try {
+      const { shortId } = req.params;
+      
+      const invitation = getInvitation(shortId);
+      
+      if (!invitation) {
+        res.status(404).json({ 
+          error: 'Invitation not found or expired',
+          shortId,
+        });
+        return;
+      }
+      
+      logger.info('Invitation retrieved via short URL', {
+        shortId,
+        invitationId: invitation['@id'],
+      });
+      
+      // Return the full invitation object
+      res.json({
+        invitation,
+        from: invitation.from,
+        goalCode: invitation.body?.goal_code,
+        goal: invitation.body?.goal,
+      });
+    } catch (error: any) {
+      logger.error('Error retrieving invitation:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  /**
+   * GET /invitations/accept
    * Accept OOB invitation (for testing via browser)
    * 
    * Query params:

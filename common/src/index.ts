@@ -33,6 +33,9 @@ export { default as logger, Logger, LogLevel, LogRecord, MessageRecord } from '.
 // Protocol exports
 export * from './protocols/index.js';
 
+// Messaging exports
+export * from './messaging/index.js';
+
 // Re-export commonly used types from didcomm library
 export type {
   DIDResolver,
