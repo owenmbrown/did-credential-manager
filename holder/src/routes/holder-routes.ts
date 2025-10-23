@@ -277,8 +277,25 @@ export function createHolderRoutes(agent: HolderAgent): Router {
 
       // Parse invitation
       let parsed;
+      
       if (invitationUrl) {
-        parsed = OOBProtocol.parseInvitationUrl(invitationUrl);
+        // Check if it's a short URL (contains /invitations/ but no ?oob= param)
+        if (invitationUrl.includes('/invitations/') && !invitationUrl.includes('?oob=')) {
+          // Fetch the invitation from the short URL
+          logger.info('Fetching invitation from short URL', { invitationUrl });
+          
+          const response = await fetch(invitationUrl);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch invitation: ${response.statusText}`);
+          }
+          
+          const data = await response.json() as any;
+          const invitationObject = data.invitation;
+          parsed = OOBProtocol.parseInvitation(invitationObject);
+        } else {
+          // Base64-encoded full URL
+          parsed = OOBProtocol.parseInvitationUrl(invitationUrl);
+        }
       } else {
         parsed = OOBProtocol.parseInvitation(invitation);
       }
@@ -302,6 +319,40 @@ export function createHolderRoutes(agent: HolderAgent): Router {
         hasPresentationRequest: !!presentationRequest,
       });
 
+      // If there's a credential offer, store it as a credential
+      if (credentialOffer) {
+        try {
+          // Extract credential data from the offer
+          const credentialPreview = credentialOffer.body?.credential_preview;
+          const attributes = credentialPreview?.attributes || {};
+
+          // Create a proper Verifiable Credential from the preview
+          const credential = {
+            '@context': [
+              'https://www.w3.org/2018/credentials/v1',
+            ],
+            type: ['VerifiableCredential', parsed.goalCode || 'GenericCredential'],
+            issuer: parsed.from,
+            issuanceDate: new Date().toISOString(),
+            credentialSubject: {
+              id: agent.getDid(),
+              ...attributes,
+            },
+          };
+
+          // Store the credential
+          await agent.storeCredential(credential);
+
+          logger.info('Credential stored from OOB invitation', {
+            issuer: parsed.from,
+            subject: agent.getDid(),
+          });
+        } catch (storeError: any) {
+          logger.error('Error storing credential from OOB invitation:', storeError);
+          // Continue with response even if storage fails
+        }
+      }
+
       res.json({
         success: true,
         invitation: parsed.invitation,
@@ -310,7 +361,9 @@ export function createHolderRoutes(agent: HolderAgent): Router {
         goalCode: parsed.goalCode,
         credentialOffer,
         presentationRequest,
-        message: 'Invitation accepted. Use the appropriate endpoint to respond.',
+        message: credentialOffer 
+          ? 'Invitation accepted. Credential stored successfully.' 
+          : 'Invitation accepted. Use the appropriate endpoint to respond.',
       });
     } catch (error: any) {
       logger.error('Error accepting OOB invitation:', error);

@@ -47,6 +47,7 @@ export default function App() {
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [offerRes, setOfferRes] = useState<{ invitationUrl: string; qrCode: string } | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     api.did().then((d) => setDid(d.did)).catch(() => {})
@@ -116,6 +117,7 @@ export default function App() {
   async function createOobOffer() {
     setError(null)
     setOfferRes(null)
+    setCopied(false)
     try {
       const resp = await api.createCredentialOfferInvitation({
         credentialType: 'DriversLicenseApplication',
@@ -125,6 +127,17 @@ export default function App() {
       setOfferRes({ invitationUrl: resp.invitationUrl, qrCode: resp.qrCode })
     } catch (e: any) {
       setError(e.message)
+    }
+  }
+
+  async function copyInvitationUrl() {
+    if (!offerRes) return
+    try {
+      await navigator.clipboard.writeText(offerRes.invitationUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (e) {
+      console.error('Failed to copy:', e)
     }
   }
 
@@ -212,23 +225,28 @@ export default function App() {
       {offerRes && (
         <div className="card">
           <h3>OOB Invitation</h3>
-          <p className="muted">将 Invitation URL 粘贴到 Holder 站点的 “Accept Invitation”。仅需预览可用下方测试链接。</p>
-          <div><strong>Invitation URL:</strong>
-            <div style={{ wordBreak: 'break-all' }}>{offerRes.invitationUrl}</div>
+          <p className="muted">Scan the QR code with the wallet app, or copy the invitation URL to paste manually.</p>
+          
+          <div style={{ marginTop: 12, marginBottom: 12 }}>
+            <button className="btn" onClick={copyInvitationUrl} style={{ minWidth: 180 }}>
+              {copied ? '✓ Copied!' : 'Copy Invitation URL'}
+            </button>
           </div>
-          <div className="muted footer-hint">
-            浏览器预览（测试用）：{
+
+          <div style={{ marginTop: 16 }}>
+            <img className="qr" src={offerRes.qrCode} alt="Invitation QR" width={250} height={250} />
+          </div>
+
+          <div className="muted footer-hint" style={{ marginTop: 12 }}>
+            Browser preview (testing): {
               (() => {
                 try {
                   const u = new URL(offerRes.invitationUrl)
                   u.pathname = u.pathname.replace(/\/didcomm$/, '/invitations/accept')
-                  return <a href={u.toString()} target="_blank" rel="noreferrer">{u.toString()}</a>
+                  return <a href={u.toString()} target="_blank" rel="noreferrer">View in Browser</a>
                 } catch { return null }
               })()
             }
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <img className="qr" src={offerRes.qrCode} alt="Invitation QR" width={200} height={200} />
           </div>
         </div>
       )}

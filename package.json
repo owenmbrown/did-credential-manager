@@ -18,6 +18,7 @@
     "build:common": "npm run build -w common",
     "dev": "npm run dev --workspaces --if-present",
     "dev:issuer": "npm -w issuer run dev",
+    "dev:issuer-web": "npm -w issuer-web run dev",
     "dev:holder": "npm -w holder run dev",
     "dev:verifier": "npm -w verifier run dev",
     "dev:wallet": "npm -w holder-wallet run dev",

@@ -133,14 +133,24 @@ export class OOBProtocol {
    * Generate a QR code for an OOB invitation
    * 
    * @param invitation - The OOB invitation
-   * @param baseUrl - Base URL for the invitation endpoint
+   * @param urlOrBaseUrl - Either a complete URL (short URL) or base URL for encoding
    * @returns QR code as data URL
    */
   static async generateQRCode(
     invitation: OOBInvitation,
-    baseUrl: string
+    urlOrBaseUrl: string
   ): Promise<string> {
-    const invitationUrl = this.createInvitationUrl(invitation, baseUrl);
+    // If URL already contains the invitation ID/path, use it directly
+    // Otherwise, create the full encoded URL
+    let invitationUrl: string;
+    if (urlOrBaseUrl.includes('/invitations/') && !urlOrBaseUrl.includes('?oob=')) {
+      // Short URL format - use as-is
+      invitationUrl = urlOrBaseUrl;
+    } else {
+      // Base URL - encode the invitation
+      invitationUrl = this.createInvitationUrl(invitation, urlOrBaseUrl);
+    }
+    
     return await QRCode.toDataURL(invitationUrl, {
       errorCorrectionLevel: 'M',
       width: 300,
