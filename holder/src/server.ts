@@ -16,7 +16,7 @@ import { logger } from '@did-edu/common';
 // Load environment variables
 dotenv.config();
 
-const PORT = parseInt(process.env.PORT || '5003', 10);
+const PORT = process.env.PORT || 5003;
 const SERVICE_ENDPOINT = process.env.SERVICE_ENDPOINT || `http://localhost:${PORT}/didcomm`;
 const DB_PATH = process.env.DB_PATH || './holder-credentials.db';
 
@@ -76,7 +76,7 @@ async function startServer() {
     });
 
     // Start server
-    app.listen(PORT, '0.0.0.0', () => {
+    app.listen(PORT, () => {
       logger.info(`✅ Holder server running on port ${PORT}`);
       logger.info(`   DID: ${agent.getDid()}`);
       logger.info(`   Service Endpoint: ${SERVICE_ENDPOINT}`);

@@ -4,7 +4,7 @@
 
 export const config = {
   // Backend API URL
-  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3002',
+  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:5003',
   
   // App metadata
   appName: 'DID Wallet',
