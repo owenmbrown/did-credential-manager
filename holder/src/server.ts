@@ -37,11 +37,49 @@ async function startServer() {
 
     // Create and initialize agent
     logger.info('Initializing holder agent...');
-    const agent = await createHolderAgent({
-      serviceEndpoint: SERVICE_ENDPOINT,
-      dbPath: DB_PATH,
-    });
-    logger.info(`Holder agent initialized with DID: ${agent.getDid()}`);
+
+    // During local dev we may want to skip the full agent initialization
+    // (which loads a WASM-based didcomm library). Set SKIP_AGENT=true to
+    // use an in-memory mock agent that implements the small subset of the
+    // agent API required by the routes. This lets the HTTP routes run
+    // even when WASM can't be instantiated in the environment.
+    let agent: any;
+    if (process.env.SKIP_AGENT === 'true') {
+      logger.info('SKIP_AGENT=true — using in-memory mock agent for development');
+      // Simple in-memory credential store
+      const store: any[] = [];
+      agent = {
+        getDid: () => process.env.MOCK_DID || 'did:example:holder',
+        getCredentials: async () => store.map((c, i) => ({ id: String(i), credential: c })),
+        getCredential: async (id: string) => {
+          const idx = Number(id);
+          return store[idx] ? { id: String(idx), credential: store[idx] } : null;
+        },
+        storeCredential: async (credential: any) => {
+          store.push(credential);
+        },
+        deleteCredential: async (id: string) => {
+          const idx = Number(id);
+          if (!store[idx]) return false;
+          store.splice(idx, 1);
+          return true;
+        },
+        requestCredential: async (_: any) => { /* no-op in mock */ },
+        createPresentation: async (_: any) => { return { presentation: {} }; },
+        sendPresentation: async (_: any) => { /* no-op in mock */ },
+        handleMessage: async (_: any) => { /* no-op in mock */ },
+        close: () => { /* no-op */ },
+      };
+      logger.info(`Mock agent ready with DID: ${agent.getDid()}`);
+    } else {
+      const { createHolderAgent } = await import('./agent.js');
+      const realAgent = await createHolderAgent({
+        serviceEndpoint: SERVICE_ENDPOINT,
+        dbPath: DB_PATH,
+      });
+      agent = realAgent;
+      logger.info(`Holder agent initialized with DID: ${agent.getDid()}`);
+    }
 
     // Routes
     app.use('/', createHolderRoutes(agent));

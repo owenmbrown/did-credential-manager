@@ -9,7 +9,8 @@
     "build": "tsc",
     "dev": "nodemon",
     "dev:build": "tsc && concurrently \"tsc --watch\" \"nodemon --watch dist dist/server.js\"",
-    "start": "node dist/server.js",
+    "start": "node --experimental-wasm-modules dist/server.js"
+,
     "clean": "rm -rf dist"
   },
   "dependencies": {

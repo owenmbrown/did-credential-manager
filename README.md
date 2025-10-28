@@ -38,7 +38,7 @@ npm run test:docker    # Run automated tests
 
 ## Run the Web Apps (Issuer / Holder / Verifier)
 
-The repository includes three separate Vite + React web apps for each role under `demo/`:
+The repository includes three separate Vite + React web apps for each role under `demo/` (the previous combined demo UI has been removed):
 
 - Issuer: `demo/issuer-web` (default http://localhost:5171/)
 - Holder: `demo/holder-web` (default http://localhost:5172/)

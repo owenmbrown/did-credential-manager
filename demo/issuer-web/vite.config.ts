@@ -6,5 +6,10 @@ export default defineConfig({
   server: {
     port: 5171,
     host: true,
+    proxy: {
+      '/invitations': 'http://localhost:5001',
+      '/credentials': 'http://localhost:5001',
+
+    }
   },
 })

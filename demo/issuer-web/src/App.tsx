@@ -1,3 +1,4 @@
+import QRCode from 'qrcode.react'
 import { useEffect, useMemo, useState } from 'react'
 import { api } from './api/client'
 
@@ -234,7 +235,7 @@ export default function App() {
           </div>
 
           <div style={{ marginTop: 16 }}>
-            <img className="qr" src={offerRes.qrCode} alt="Invitation QR" width={250} height={250} />
+            <QRCode value={offerRes.invitationUrl} size={250} />
           </div>
 
           <div className="muted footer-hint" style={{ marginTop: 12 }}>

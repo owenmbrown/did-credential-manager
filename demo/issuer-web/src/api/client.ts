@@ -1,6 +1,14 @@
-const base = import.meta.env.VITE_ISSUER_BASE_URL || 'http://localhost:5001'
+// Configure API base URL behavior:
+// - If VITE_ISSUER_BASE_URL is undefined -> default to http://localhost:5001 (direct backend)
+// - If VITE_ISSUER_BASE_URL is set to empty string ('') -> use relative paths so Vite dev proxy can forward requests
+// - Otherwise use the explicit VITE_ISSUER_BASE_URL value
+const baseEnv = import.meta.env.VITE_ISSUER_BASE_URL
+const base = baseEnv === undefined ? 'http://localhost:5001' : (baseEnv === '' ? '' : baseEnv)
 
-async function j<T>(res: Response): Promise<T> { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json() }
+async function j<T>(res: Response): Promise<T> {
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
 
 export const api = {
   did: () => fetch(`${base}/did`).then((r) => j<{ did: string }>(r)),
