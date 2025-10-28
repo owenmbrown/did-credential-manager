@@ -21,7 +21,7 @@ export function CredentialCard({ credential, onClick, selected }: CredentialCard
   const issuerName = issuerDid.split(':').pop()?.substring(0, 12) + '...' || 'Unknown Issuer';
 
   // Get primary subject data
-  const subject = vc.credentialSubject;
+  const subject = vc.credentialSubject || {};
   const subjectKeys = Object.keys(subject).filter(k => k !== 'id');
   const primaryData = subjectKeys.slice(0, 2);
 
@@ -45,7 +45,9 @@ export function CredentialCard({ credential, onClick, selected }: CredentialCard
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">{primaryType}</h3>
-            <p className="text-xs text-gray-500">Issued {formatDistanceToNow(vc.issuanceDate)}</p>
+            <p className="text-xs text-gray-500">
+              {vc.issuanceDate ? `Issued ${formatDistanceToNow(vc.issuanceDate)}` : 'No issue date'}
+            </p>
           </div>
         </div>
         {isExpired ? (
