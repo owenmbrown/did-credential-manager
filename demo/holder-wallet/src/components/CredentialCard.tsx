@@ -10,7 +10,7 @@ interface CredentialCardProps {
 
 export function CredentialCard({ credential, onClick, selected }: CredentialCardProps) {
   const { credential: vc } = credential;
-  const types = vc.type.filter((t) => t !== 'VerifiableCredential');
+  const types = (vc.type || []).filter((t) => t !== 'VerifiableCredential');
   const primaryType = types[0] || 'Credential';
   
   // Check if expired
