@@ -67,6 +67,63 @@ services:
       retries: 3
       start_period: 40s
 
+  holder-wallet:
+    build:
+      context: ./demo/holder-wallet
+      dockerfile: Dockerfile
+    container_name: did-holder-wallet
+    ports:
+      - "5173:80"
+    networks:
+      - did-network
+    restart: unless-stopped
+    depends_on:
+      - holder
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  issuer-web:
+    build:
+      context: ./demo/issuer-web
+      dockerfile: Dockerfile
+    container_name: did-issuer-web
+    ports:
+      - "5171:80"
+    networks:
+      - did-network
+    restart: unless-stopped
+    depends_on:
+      - issuer
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  verifier-web:
+    build:
+      context: ./demo/verifier-web
+      dockerfile: Dockerfile
+    container_name: did-verifier-web
+    ports:
+      - "5172:80"
+    networks:
+      - did-network
+    restart: unless-stopped
+    depends_on:
+      - verifier
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
 networks:
   did-network:
     driver: bridge
