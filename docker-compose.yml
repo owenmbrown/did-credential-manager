@@ -11,7 +11,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5001
-      - SERVICE_ENDPOINT=http://localhost:5001/didcomm
+      - SERVICE_ENDPOINT=http://did-issuer:5001/didcomm
     networks:
       - did-network
     restart: unless-stopped
@@ -32,7 +32,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5003
-      - SERVICE_ENDPOINT=http://localhost:5003/didcomm
+      - SERVICE_ENDPOINT=http://did-holder:5003/didcomm
       - DB_PATH=/data/holder-credentials.db
     volumes:
       - holder-data:/data
@@ -56,7 +56,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5002
-      - SERVICE_ENDPOINT=http://localhost:5002/didcomm
+      - SERVICE_ENDPOINT=http://did-verifier:5002/didcomm
     networks:
       - did-network
     restart: unless-stopped

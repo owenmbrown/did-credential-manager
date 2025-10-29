@@ -105,7 +105,7 @@ export function PresentationBuilderView() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-4 space-y-6">
+      <form onSubmit={handleSubmit} className="p-4 space-y-6 pb-32">
         {/* Verifier Info Banner */}
         {state?.request && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -254,16 +254,19 @@ export function PresentationBuilderView() {
             </div>
           </div>
         )}
+      </form>
 
-        {/* Submit Button */}
+      {/* Fixed Bottom Button Area */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg">
         <button
           type="submit"
+          onClick={handleSubmit}
           disabled={
             selectedIds.length === 0 ||
             createAndSendMutation.isPending ||
             createAndSendMutation.isSuccess
           }
-          className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+          className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold text-base shadow-md active:scale-95"
         >
           {createAndSendMutation.isPending ? (
             <>
@@ -279,11 +282,11 @@ export function PresentationBuilderView() {
         </button>
 
         {selectedIds.length === 0 && (
-          <p className="text-sm text-center text-gray-500">
+          <p className="text-sm text-center text-gray-500 mt-2">
             Please select at least one credential
           </p>
         )}
-      </form>
+      </div>
     </div>
   );
 }
