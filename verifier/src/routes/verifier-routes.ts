@@ -203,6 +203,7 @@ export function createVerifierRoutes(agent: VerifierAgent): Router {
    * Body:
    * {
    *   "requestedCredentials": ["DriversLicense", "UniversityDegree"], // array of credential types
+   *   "requestedFields": ["name", "age"], // optional, specific fields to request
    *   "ttl": 3600 // optional, time-to-live in seconds
    * }
    * 
@@ -210,7 +211,7 @@ export function createVerifierRoutes(agent: VerifierAgent): Router {
    */
   router.post('/invitations/presentation-request', async (req: Request, res: Response) => {
     try {
-      const { requestedCredentials, ttl } = req.body;
+      const { requestedCredentials, requestedFields, ttl } = req.body;
 
       // Validate input
       if (!requestedCredentials || !Array.isArray(requestedCredentials) || requestedCredentials.length === 0) {
@@ -231,7 +232,10 @@ export function createVerifierRoutes(agent: VerifierAgent): Router {
         verifierDid,
         requestedCredentials,
         challenge,
-        { ttl }
+        { 
+          ttl,
+          requestedFields, // Pass field selection to invitation
+        }
       );
 
       // Get base URL for this service
@@ -245,6 +249,7 @@ export function createVerifierRoutes(agent: VerifierAgent): Router {
 
       logger.info('OOB presentation request invitation created', {
         requestedCredentials,
+        requestedFields,
         invitationId: invitation['@id'],
         challenge,
       });

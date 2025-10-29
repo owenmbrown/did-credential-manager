@@ -9,6 +9,7 @@ export default function App() {
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [requestedTypes, setRequestedTypes] = useState('DemoCredential')
+  const [requestedFields, setRequestedFields] = useState('')
   const [invite, setInvite] = useState<{ url: string; qr: string; challenge: string } | null>(null)
   const [vpInput, setVpInput] = useState<string>('')
   const [activeTab, setActiveTab] = useState<'verify' | 'request' | 'presentation'>('verify')
@@ -36,6 +37,7 @@ export default function App() {
     try {
       const resp = await api.createPresentationRequestInvitation({
         requestedCredentials: requestedTypes.split(',').map((s) => s.trim()).filter(Boolean),
+        requestedFields: requestedFields ? requestedFields.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
         ttl: 3600,
       })
       setInvite({ url: resp.invitationUrl, qr: resp.qrCode, challenge: resp.challenge })
@@ -156,13 +158,26 @@ export default function App() {
             Generate an invitation for a wallet to present specific credentials.
           </p>
           
-          <label className="label">Requested Credential Types (comma-separated)</label>
+          <label className="label">Requested Credential Types (comma-separated) *</label>
           <input
             className="bank-input"
             value={requestedTypes}
             onChange={(e) => setRequestedTypes(e.target.value)}
             placeholder="e.g. DemoCredential, ProofOfAge"
+            style={{ marginBottom: '1rem' }}
           />
+          
+          <label className="label">Specific Fields to Request (comma-separated, optional)</label>
+          <input
+            className="bank-input"
+            value={requestedFields}
+            onChange={(e) => setRequestedFields(e.target.value)}
+            placeholder="e.g. name, age, email"
+            style={{ marginBottom: '1rem' }}
+          />
+          <p style={{ color: '#718096', fontSize: '0.875rem', marginTop: '-0.5rem', marginBottom: '1.5rem' }}>
+            ℹ️ Only these specific fields will be requested from the wallet. Leave blank to request all fields.
+          </p>
           
           <button className="bank-button" onClick={createInvitation} style={{ marginTop: '1rem' }}>
             Generate Verification Request

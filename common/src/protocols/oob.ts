@@ -265,15 +265,21 @@ export class OOBProtocol {
    * @param from - The verifier's DID
    * @param requestedCredentials - Types of credentials requested
    * @param challenge - Verification challenge
-   * @param options - Additional options
+   * @param options - Additional options including:
+   *   - requestedFields: Specific fields to request from credentials
+   *   - ttl: Time to live
    * @returns OOB invitation with presentation request
    */
   static createPresentationRequestInvitation(
     from: string,
     requestedCredentials: string[],
     challenge: string,
-    options: Partial<CreateOOBInvitationOptions> = {}
+    options: Partial<CreateOOBInvitationOptions & {
+      requestedFields?: string[];
+    }> = {}
   ): OOBInvitation {
+    const { requestedFields } = options;
+    
     const attachment: OOBAttachment = {
       id: uuidv4(),
       media_type: 'application/json',
@@ -284,7 +290,9 @@ export class OOBProtocol {
           body: {
             will_confirm: true,
             goal_code: 'Verify Identity',
-            comment: 'Please present the requested credentials',
+            comment: requestedFields && requestedFields.length > 0
+              ? `Please present ${requestedFields.join(', ')} from the requested credentials`
+              : 'Please present the requested credentials',
           },
           attachments: [{
             id: uuidv4(),
@@ -297,21 +305,46 @@ export class OOBProtocol {
                 },
                 presentation_definition: {
                   id: uuidv4(),
-                  input_descriptors: requestedCredentials.map(type => ({
-                    id: uuidv4(),
-                    name: type,
-                    purpose: `Verify ${type}`,
-                    constraints: {
-                      fields: [{
+                  input_descriptors: requestedCredentials.map(type => {
+                    // Build field constraints
+                    const fieldConstraints: any[] = [
+                      {
                         path: ['$.type'],
                         filter: {
                           type: 'string',
                           pattern: type,
                         },
-                      }],
-                    },
-                  })),
+                      }
+                    ];
+
+                    // Add requested fields constraints if specified
+                    if (requestedFields && requestedFields.length > 0) {
+                      requestedFields.forEach(field => {
+                        fieldConstraints.push({
+                          path: [`$.credentialSubject.${field}`],
+                          filter: {
+                            type: 'string',
+                            const: field,
+                          },
+                          optional: false,
+                        });
+                      });
+                    }
+
+                    return {
+                      id: uuidv4(),
+                      name: type,
+                      purpose: requestedFields && requestedFields.length > 0
+                        ? `Verify ${type} (fields: ${requestedFields.join(', ')})`
+                        : `Verify ${type}`,
+                      constraints: {
+                        fields: fieldConstraints,
+                      },
+                    };
+                  }),
                 },
+                // Include requested fields in the attachment metadata for wallet parsing
+                requestedFields,
               },
             },
           }],
@@ -319,12 +352,14 @@ export class OOBProtocol {
       },
     };
 
+    const { ttl, goalCode, goal, accept } = options;
     return this.createInvitation({
       from,
-      goalCode: 'verify-credentials',
-      goal: 'Verify your credentials',
+      goalCode: goalCode || 'verify-credentials',
+      goal: goal || 'Verify your credentials',
       attachments: [attachment],
-      ...options,
+      ttl,
+      accept,
     });
   }
 
