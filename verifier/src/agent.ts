@@ -49,6 +49,8 @@ export class VerifierAgent {
   private challengeManager: ChallengeManager;
   private verifier: Verifier;
   private verifierDid: string | null = null;
+  // Map invitation IDs to challenge IDs for presentation request tracking
+  private invitationToChallengeMap: Map<string, string> = new Map();
   private secretsResolver: EphemeralSecretsResolver;
   private serviceEndpoint: string;
 
@@ -124,6 +126,20 @@ export class VerifierAgent {
    */
   getChallengeManager(): ChallengeManager {
     return this.challengeManager;
+  }
+
+  /**
+   * Store mapping from invitation ID to challenge ID
+   */
+  storeChallengeForInvitation(invitationId: string, challengeId: string): void {
+    this.invitationToChallengeMap.set(invitationId, challengeId);
+  }
+
+  /**
+   * Get challenge ID for an invitation ID
+   */
+  getChallengeIdForInvitation(invitationId: string): string | undefined {
+    return this.invitationToChallengeMap.get(invitationId);
   }
 
   /**
@@ -246,8 +262,12 @@ export class VerifierAgent {
 
     // Handle different message types
     switch (plaintext.type) {
-      case 'https://didcomm.org/present-proof/3.0/presentation':
-        return await this.handlePresentation(plaintext);
+      case 'https://didcomm.org/present-proof/3.0/presentation': {
+        // If this has a thread ID, try to look up the challenge ID
+        const thid = plaintext.thid;
+        const challengeId = thid ? this.getChallengeIdForInvitation(thid) : undefined;
+        return await this.handlePresentation(plaintext, challengeId);
+      }
 
       case 'https://didcomm.org/present-proof/3.0/problem-report':
         return await this.handleProblemReport(plaintext);
@@ -264,7 +284,7 @@ export class VerifierAgent {
   /**
    * Handle presentation from holder
    */
-  private async handlePresentation(message: any): Promise<VerificationResult> {
+  private async handlePresentation(message: any, challengeId?: string): Promise<VerificationResult> {
     if (!this.verifierDid) {
       throw new Error('Agent not initialized');
     }
@@ -286,17 +306,19 @@ export class VerifierAgent {
     }
 
     // Verify the presentation
-    // If this is in response to a request (has thread ID), verify with challenge
+    // If this is in response to a request (has thread ID or challenge ID), verify with challenge
     let result: VerificationResult;
     let challenge: string | undefined;
     
-    if (message.thid) {
+    if (challengeId || message.thid) {
       const proofChallenge = presentation.proof?.challenge;
       if (proofChallenge) {
         challenge = proofChallenge;
       }
       
-      result = await this.verifyPresentationWithChallenge(presentation, message.thid);
+      // Use provided challengeId or fall back to thid
+      const idToUse = challengeId || message.thid;
+      result = await this.verifyPresentationWithChallenge(presentation, idToUse);
     } else {
       // Unsolicited presentation, verify without challenge
       result = await this.verifyPresentation(presentation);

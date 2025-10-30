@@ -309,10 +309,11 @@ export function createVerifierRoutes(agent: VerifierAgent): Router {
       const verifierDid = agent.getDid();
 
       // Generate a challenge for this request
-      const { challenge } = agent.generateChallenge({
+      const challengeObj = agent.generateChallenge({
         domain: verifierDid,
         ttlMinutes: ttl ? Math.floor(ttl / 60) : 5,
       });
+      const { challenge, id: challengeId } = challengeObj;
 
       // Create OOB invitation with presentation request
       const invitation = OOBProtocol.createPresentationRequestInvitation(
@@ -324,6 +325,12 @@ export function createVerifierRoutes(agent: VerifierAgent): Router {
           requestedFields, // Pass field selection to invitation
         }
       );
+
+      // Store mapping from invitation ID to challenge ID for later lookup in presentation
+      const invitationId = invitation['@id'];
+      if (invitationId && challengeId) {
+        agent.storeChallengeForInvitation(invitationId, challengeId);
+      }
 
       // Get base URL for this service
       const protocol = req.protocol;
