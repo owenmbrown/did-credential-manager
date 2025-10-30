@@ -64,6 +64,7 @@ export interface ParsedOOBInvitation {
   isExpired: boolean;
   credentialOffer?: any;
   presentationRequest?: any;
+  invitationId?: string;
 }
 
 export interface PresentationRequest {

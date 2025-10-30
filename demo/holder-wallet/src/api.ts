@@ -67,7 +67,7 @@ export const holderApi = {
   /**
    * Accept an OOB invitation
    */
-  async acceptInvitation(invitationUrl: string): Promise<ParsedOOBInvitation> {
+  async acceptInvitation(invitationUrl: string): Promise<ParsedOOBInvitation & { success?: boolean; message?: string; invitationId?: string }> {
     const response = await api.post('/invitations/accept', { invitationUrl });
     return response.data;
   },

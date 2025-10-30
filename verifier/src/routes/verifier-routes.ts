@@ -54,6 +54,50 @@ function getInvitation(shortId: string): any | null {
 }
 
 /**
+ * In-memory store for verification results (indexed by challenge)
+ */
+const verificationResultStore = new Map<string, {
+  result: any;
+  timestamp: number;
+  expiresAt: number;
+}>();
+
+/**
+ * Store a verification result
+ */
+function storeVerificationResult(challenge: string, result: any, ttlSeconds: number = 600): void {
+  verificationResultStore.set(challenge, {
+    result,
+    timestamp: Date.now(),
+    expiresAt: Date.now() + (ttlSeconds * 1000),
+  });
+  
+  // Clean up expired results
+  setTimeout(() => {
+    verificationResultStore.delete(challenge);
+  }, ttlSeconds * 1000);
+}
+
+/**
+ * Retrieve a verification result by challenge
+ */
+function getVerificationResult(challenge: string): any | null {
+  const stored = verificationResultStore.get(challenge);
+  
+  if (!stored) {
+    return null;
+  }
+  
+  // Check if expired
+  if (stored.expiresAt < Date.now()) {
+    verificationResultStore.delete(challenge);
+    return null;
+  }
+  
+  return stored.result;
+}
+
+/**
  * Create verifier routes
  */
 export function createVerifierRoutes(agent: VerifierAgent): Router {
@@ -362,6 +406,13 @@ export function createVerifierRoutes(agent: VerifierAgent): Router {
 
       const result = await agent.handleMessage(packedMessage);
 
+      if (result && result.verified !== undefined) {
+        const challenge = (result as any).challenge;
+        if (challenge) {
+          storeVerificationResult(challenge, result, 600);
+        }
+      }
+
       res.status(200).json({
         success: true,
         result,
@@ -436,6 +487,35 @@ export function createVerifierRoutes(agent: VerifierAgent): Router {
         status: 'unhealthy',
         error: error.message,
       });
+    }
+  });
+
+  /**
+   * GET /verifications/:challenge
+   * Retrieve verification result by challenge
+   */
+  router.get('/verifications/:challenge', (req: Request, res: Response) => {
+    try {
+      const { challenge } = req.params;
+      const result = getVerificationResult(challenge);
+
+      if (!result) {
+        res.status(404).json({
+          error: 'Verification result not found or expired',
+          challenge,
+        });
+        return;
+      }
+
+      logger.info('Verification result retrieved', {
+        challenge,
+        verified: result.verified,
+      });
+
+      res.json(result);
+    } catch (error: any) {
+      logger.error('Error retrieving verification result:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 

@@ -312,6 +312,8 @@ export function createHolderRoutes(agent: HolderAgent): Router {
       // Check for presentation request
       const presentationRequest = OOBProtocol.extractPresentationRequest(parsed.invitation);
 
+      const invitationId = parsed.invitation['@id'];
+      
       logger.info('OOB invitation accepted', {
         from: parsed.from,
         goalCode: parsed.goalCode,
@@ -361,6 +363,7 @@ export function createHolderRoutes(agent: HolderAgent): Router {
         goalCode: parsed.goalCode,
         credentialOffer,
         presentationRequest,
+        invitationId, // Use the extracted ID
         message: credentialOffer 
           ? 'Invitation accepted. Credential stored successfully.' 
           : 'Invitation accepted. Use the appropriate endpoint to respond.',

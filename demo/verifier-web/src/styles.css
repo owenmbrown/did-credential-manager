@@ -827,16 +827,6 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
-.qr-scanning-animation {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, transparent, #667eea, transparent);
-  animation: scan 2s linear infinite;
-}
-
 @keyframes scan {
   0% { transform: translateY(0); opacity: 0; }
   50% { opacity: 1; }

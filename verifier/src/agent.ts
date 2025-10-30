@@ -288,9 +288,14 @@ export class VerifierAgent {
     // Verify the presentation
     // If this is in response to a request (has thread ID), verify with challenge
     let result: VerificationResult;
+    let challenge: string | undefined;
     
     if (message.thid) {
-      // This is a response to our request, verify with challenge
+      const proofChallenge = presentation.proof?.challenge;
+      if (proofChallenge) {
+        challenge = proofChallenge;
+      }
+      
       result = await this.verifyPresentationWithChallenge(presentation, message.thid);
     } else {
       // Unsolicited presentation, verify without challenge
@@ -313,6 +318,11 @@ export class VerifierAgent {
     logger.info(`Verification result sent to ${message.from}`, {
       verified: result.verified,
     });
+
+    // Add challenge to result for storage by the route
+    if (challenge) {
+      (result as any).challenge = challenge;
+    }
 
     return result;
   }

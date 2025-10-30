@@ -69,12 +69,6 @@ export class VPBuilder {
       };
     }
 
-    logger.info('Verifiable Presentation created', {
-      holder: holderDid,
-      credentialCount: credentials.length,
-      challenge: challenge || 'none',
-    });
-
     return vp;
   }
 
@@ -112,11 +106,6 @@ export class VPBuilder {
         }
       });
     }
-
-    logger.info('Selective disclosure applied', {
-      originalFields: Object.keys(credential.credentialSubject || {}),
-      disclosedFields: Object.keys(disclosed.credentialSubject || {}),
-    });
 
     return disclosed;
   }
@@ -175,13 +164,22 @@ export class VPBuilder {
   } {
     const body = request.body || {};
     
-    return {
+    // Try to extract challenge from DIDComm message attachments (for presentation requests)
+    let challenge = body.challenge || request.challenge;
+    if (!challenge && request.attachments && request.attachments.length > 0) {
+      const attachment = request.attachments[0];
+      challenge = attachment.data?.json?.options?.challenge;
+    }
+    
+    const extracted = {
       credentialTypes: body.credential_types || body.credentialTypes,
       fields: body.fields || body.requested_attributes,
       issuers: body.trusted_issuers || body.issuers,
-      challenge: body.challenge || request.challenge,
+      challenge,
       domain: body.domain || request.domain,
     };
+
+    return extracted;
   }
 
   /**
@@ -233,12 +231,15 @@ export class VPBuilder {
     // Validate request
     const validation = this.validatePresentationRequest(request);
     if (!validation.valid) {
+      logger.error('Request validation failed', {
+        errors: validation.errors,
+      });
       throw new Error(`Invalid presentation request: ${validation.errors.join(', ')}`);
     }
 
     // Extract requirements
     const requirements = this.extractRequirements(request);
-
+    
     // Filter credentials
     const matchingCredentials = this.filterCredentialsByRequirements(
       credentials,
@@ -246,6 +247,7 @@ export class VPBuilder {
     );
 
     if (matchingCredentials.length === 0) {
+      logger.error('No matching credentials found');
       throw new Error('No credentials match the presentation requirements');
     }
 

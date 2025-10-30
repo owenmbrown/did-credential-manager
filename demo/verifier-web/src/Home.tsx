@@ -17,7 +17,7 @@ export default function Home() {
     <div className="bank-container">
       {/* Header */}
       <div className="bank-header">
-        <h1>🏦 SecureBank</h1>
+        <h1>SecureBank</h1>
         <p>Trusted Financial Services Since 2025</p>
       </div>
 

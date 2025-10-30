@@ -131,7 +131,7 @@ export default function Apply() {
                   maxLength={11}
                   required
                 />
-                <small>🔒 Encrypted and secure</small>
+                <small>Encrypted and secure</small>
               </div>
             </div>
 

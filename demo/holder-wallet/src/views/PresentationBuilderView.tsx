@@ -18,6 +18,7 @@ export function PresentationBuilderView() {
   const [challenge, setChallenge] = useState('');
   const [verifierDid, setVerifierDid] = useState('');
   const [domain, setDomain] = useState('');
+  const [threadId, setThreadId] = useState('');
 
   const { data: credentials, isLoading } = useQuery({
     queryKey: ['credentials'],
@@ -39,6 +40,7 @@ export function PresentationBuilderView() {
         await holderApi.sendPresentation({
           verifierDid,
           presentation,
+          threadId: threadId || undefined,
         });
       }
 
@@ -46,15 +48,22 @@ export function PresentationBuilderView() {
     },
   });
 
-  // Pre-fill from OOB invitation if present
   useEffect(() => {
     if (state?.request) {
-      const { from, presentationRequest } = state.request;
+      const { from, presentationRequest, invitationId } = state.request;
       setVerifierDid(from);
-      if (presentationRequest?.challenge) {
-        setChallenge(presentationRequest.challenge);
+      // Extract threadId from the backend's invitationId
+      if (invitationId) {
+        setThreadId(invitationId);
+      } else {
+        const fallbackId = (state.request as any).invitation?.['@id'];
+        if (fallbackId) {
+          setThreadId(fallbackId);
+        }
       }
-      // Could also auto-select credentials based on requested types
+      if (presentationRequest?.options?.challenge) {
+        setChallenge(presentationRequest.options.challenge);
+      }
     }
   }, [state]);
 
@@ -159,7 +168,7 @@ export function PresentationBuilderView() {
               onChange={(e) => setChallenge(e.target.value)}
               placeholder="Challenge from verifier"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-mono"
-              readOnly={!!state?.request?.presentationRequest?.challenge}
+              readOnly={!!state?.request?.presentationRequest?.options?.challenge}
             />
             <p className="text-xs text-gray-500 mt-1">
               Prevents replay attacks
@@ -266,7 +275,7 @@ export function PresentationBuilderView() {
             createAndSendMutation.isPending ||
             createAndSendMutation.isSuccess
           }
-          className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold text-base shadow-md active:scale-95"
+          className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-black text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold text-base shadow-md active:scale-95"
         >
           {createAndSendMutation.isPending ? (
             <>

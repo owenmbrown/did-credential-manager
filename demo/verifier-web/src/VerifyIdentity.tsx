@@ -51,25 +51,29 @@ export default function VerifyIdentity() {
   // Poll for verification results
   function startPolling(challenge: string) {
     let pollCount = 0
-    const maxPolls = 60 // 5 minutes max (every 5 seconds)
+    const maxPolls = 120 // 10 minutes (every 5 seconds)
 
     const interval = setInterval(async () => {
       pollCount++
       
-      // Check if presentation was received
-      // In a real app, this would check a backend endpoint
-      // For demo, we'll simulate it with sessionStorage
-      const verified = sessionStorage.getItem(`verified_${challenge}`)
-      
-      if (verified) {
-        clearInterval(interval)
-        setVerifying(false)
-        // Store verification data
-        sessionStorage.setItem('verificationResult', verified)
-        navigate('/approved')
-      } else if (pollCount >= maxPolls) {
-        clearInterval(interval)
-        setError('Verification timeout. Please try again.')
+      try {
+        // Check verification result from backend
+        const result = await api.getVerificationResult(challenge)
+        
+        if (result && result.verified !== undefined) {
+          clearInterval(interval)
+          setVerifying(false)
+          // Store verification data
+          sessionStorage.setItem('verificationResult', JSON.stringify(result))
+          navigate('/approved')
+          return
+        }
+      } catch (error) {
+        // Still waiting - result not found yet
+        if (pollCount >= maxPolls) {
+          clearInterval(interval)
+          setError('Verification timeout. Please try again.')
+        }
       }
     }, 5000)
 
@@ -121,16 +125,13 @@ export default function VerifyIdentity() {
                 
                 <div className="qr-code-container">
                   <img src={invite.qr} alt="Verification QR Code" className="qr-code-image" />
-                  <div className="qr-scanning-animation"></div>
                 </div>
 
                 <div className="qr-info">
                   <div className="info-badge">
-                    <span className="badge-icon">🔒</span>
                     <span>Encrypted & Secure</span>
                   </div>
                   <div className="info-badge">
-                    <span className="badge-icon">⏱️</span>
                     <span>Valid for 10 minutes</span>
                   </div>
                 </div>
@@ -141,15 +142,57 @@ export default function VerifyIdentity() {
                 >
                   📋 Copy Link Instead
                 </button>
+
+                {/* Challenge Display - for debugging/testing */}
+                <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#718096', marginBottom: '0.5rem' }}>
+                    Challenge ID
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <code style={{ 
+                      flex: 1, 
+                      padding: '0.5rem', 
+                      background: 'white', 
+                      borderRadius: '4px', 
+                      fontSize: '0.75rem', 
+                      wordBreak: 'break-all',
+                      fontFamily: 'monospace',
+                      color: '#2d3748',
+                      border: '1px solid #cbd5e0'
+                    }}>
+                      {invite.challenge}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(invite.challenge)}
+                      style={{
+                        padding: '0.5rem 0.75rem',
+                        background: '#667eea',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      📋 Copy
+                    </button>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#718096', marginTop: '0.5rem', margin: '0.5rem 0 0 0' }}>
+                    This challenge links your request to the verification result
+                  </p>
+                </div>
               </div>
 
               <div className="privacy-card">
-                <h3>🛡️ Your Privacy is Protected</h3>
+                <h3>Your Privacy is Protected</h3>
                 <p>We're only requesting:</p>
                 <ul className="requested-fields">
-                  <li>✓ Name</li>
-                  <li>✓ Date of Birth</li>
-                  <li>✓ Address</li>
+                  <li>Name</li>
+                  <li>Date of Birth</li>
+                  <li>Address</li>
                 </ul>
                 <p className="privacy-note">
                   Other information in your credential (like ID numbers) will NOT be shared.
