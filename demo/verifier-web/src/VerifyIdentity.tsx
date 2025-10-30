@@ -60,12 +60,18 @@ export default function VerifyIdentity() {
         // Check verification result from backend
         const result = await api.getVerificationResult(challenge)
         
-        if (result && result.verified !== undefined) {
+        if (result && result.verified === true) {
           clearInterval(interval)
           setVerifying(false)
           // Store verification data
           sessionStorage.setItem('verificationResult', JSON.stringify(result))
           navigate('/approved')
+          return
+        } else if (result && result.verified === false) {
+          // Verification failed
+          clearInterval(interval)
+          setVerifying(false)
+          setError(result.errors?.[0] || 'Verification failed. Please try again.')
           return
         }
       } catch (error) {
