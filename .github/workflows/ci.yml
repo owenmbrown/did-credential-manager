@@ -183,6 +183,11 @@ jobs:
         run: |
           cd holder
           npm run test:coverage
+
+      - name: Run verifier unit tests
+        run: |
+          cd verifier
+          npm run test:coverage
         
       - name: Upload issuer coverage
         uses: codecov/codecov-action@v4
@@ -200,6 +205,15 @@ jobs:
           files: ./holder/coverage/lcov.info
           flags: holder
           name: holder-coverage
+        continue-on-error: true
+
+      - name: Upload verifier coverage
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./verifier/coverage/lcov.info
+          flags: verifier
+          name: verifier-coverage
         continue-on-error: true
 
   lint-and-typecheck:
