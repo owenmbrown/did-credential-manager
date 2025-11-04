@@ -86,7 +86,7 @@ export class HolderAgent {
       );
       logger.info(`Holder DID created: ${this.holderDid}`);
     }
-    return this.holderDid;
+    return this.holderDid!;
   }
 
   /**
