@@ -35,7 +35,7 @@ export type DID = string;
 /**
  * Convert X25519 key pair to DIDComm secret
  */
-function x25519ToSecret(did: DID, x25519KeyPriv: Uint8Array, x25519Key: Uint8Array): Secret {
+function x25519ToSecret(did: DID, x25519KeyPriv: Uint8Array, _x25519Key: Uint8Array): Secret {
   const encIdent = 'key-2';
   const secretEnc: Secret = {
     id: `${did}#${encIdent}`,

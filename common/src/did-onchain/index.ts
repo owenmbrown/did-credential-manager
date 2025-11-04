@@ -75,8 +75,8 @@ export class DIDOnChainRegistry {
    */
   async registerDID(
     did: DID,
-    didDocument: any,
-    privateKey: string
+    _didDocument: any,
+    _privateKey: string
   ): Promise<RegistrationResult> {
     try {
       logger.info('Registering DID on-chain', {
@@ -125,7 +125,7 @@ export class DIDOnChainRegistry {
    * @param signature - Signature from the registration transaction
    * @returns True if PoP is valid
    */
-  async verifyPoP(did: DID, signature: string): Promise<boolean> {
+  async verifyPoP(did: DID, _signature: string): Promise<boolean> {
     try {
       // TODO: Implement PoP verification
       // This would involve:
@@ -150,7 +150,7 @@ export class DIDOnChainRegistry {
    * @param did - The DID to resolve
    * @returns The DID document if found
    */
-  async resolveDID(did: DID): Promise<any | null> {
+  async resolveDID(_did: DID): Promise<any | null> {
     try {
       // TODO: Implement on-chain DID resolution
       // This would involve:
@@ -162,7 +162,7 @@ export class DIDOnChainRegistry {
       return null;
     } catch (error: any) {
       logger.error('Error resolving DID from on-chain', {
-        did,
+        did: _did,
         error: error.message,
       });
       return null;
@@ -182,8 +182,8 @@ export class DIDOnChainRegistry {
    */
   async updateDID(
     did: DID,
-    didDocument: any,
-    privateKey: string
+    _didDocument: any,
+    _privateKey: string
   ): Promise<RegistrationResult> {
     try {
       logger.info('Updating DID on-chain', { did });
@@ -222,7 +222,7 @@ export class DIDOnChainRegistry {
    */
   async deactivateDID(
     did: DID,
-    privateKey: string
+    _privateKey: string
   ): Promise<RegistrationResult> {
     try {
       logger.info('Deactivating DID on-chain', { did });

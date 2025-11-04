@@ -11,7 +11,6 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import QRCode from 'qrcode';
-import { Message } from 'didcomm';
 
 /**
  * OOB Invitation attachment format
