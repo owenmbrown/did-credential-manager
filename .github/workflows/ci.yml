@@ -154,6 +154,68 @@ jobs:
         run: |
           docker compose down -v
 
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build common package
+        run: npm run build:common
+
+      - name: Run issuer unit tests
+        run: |
+          cd issuer
+          npm run test:coverage
+
+      - name: Run holder unit tests
+        run: |
+          cd holder
+          npm run test:coverage
+
+      - name: Run verifier unit tests
+        run: |
+          cd verifier
+          npm run test:coverage
+        
+      - name: Upload issuer coverage
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./issuer/coverage/lcov.info
+          flags: issuer
+          name: issuer-coverage
+        continue-on-error: true
+
+      - name: Upload holder coverage
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./holder/coverage/lcov.info
+          flags: holder
+          name: holder-coverage
+        continue-on-error: true
+
+      - name: Upload verifier coverage
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./verifier/coverage/lcov.info
+          flags: verifier
+          name: verifier-coverage
+        continue-on-error: true
+
   lint-and-typecheck:
     name: Lint & Type Check
     runs-on: ubuntu-latest

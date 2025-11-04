@@ -250,6 +250,48 @@ export function createCredentialRoutes(agent: IssuerAgent): Router {
   });
 
   /**
+   * GET /invitations/accept
+   * Accept OOB invitation (for testing via browser)
+   * 
+   * Query params:
+   *   oob: Base64-encoded invitation
+   * 
+   * Note: This must come before /invitations/:shortId to avoid route conflict
+   */
+  router.get('/invitations/accept', async (req: Request, res: Response) => {
+    try {
+      const oobParam = req.query.oob as string;
+
+      if (!oobParam) {
+        res.status(400).json({ error: 'Missing oob query parameter' });
+        return;
+      }
+
+      // Parse the invitation
+      const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+      const parsed = OOBProtocol.parseInvitationUrl(fullUrl);
+
+      logger.info('OOB invitation received', {
+        from: parsed.from,
+        goal: parsed.goal,
+        isExpired: parsed.isExpired,
+      });
+
+      res.json({
+        invitation: parsed.invitation,
+        from: parsed.from,
+        goal: parsed.goal,
+        goalCode: parsed.goalCode,
+        isExpired: parsed.isExpired,
+        attachments: parsed.attachments,
+      });
+    } catch (error: any) {
+      logger.error('Error accepting OOB invitation:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  /**
    * GET /invitations/:shortId
    * Retrieve an invitation by short ID (for QR code scans)
    */
@@ -281,46 +323,6 @@ export function createCredentialRoutes(agent: IssuerAgent): Router {
       });
     } catch (error: any) {
       logger.error('Error retrieving invitation:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  /**
-   * GET /invitations/accept
-   * Accept OOB invitation (for testing via browser)
-   * 
-   * Query params:
-   *   oob: Base64-encoded invitation
-   */
-  router.get('/invitations/accept', async (req: Request, res: Response) => {
-    try {
-      const oobParam = req.query.oob as string;
-
-      if (!oobParam) {
-        res.status(400).json({ error: 'Missing oob query parameter' });
-        return;
-      }
-
-      // Parse the invitation
-      const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
-      const parsed = OOBProtocol.parseInvitationUrl(fullUrl);
-
-      logger.info('OOB invitation received', {
-        from: parsed.from,
-        goal: parsed.goal,
-        isExpired: parsed.isExpired,
-      });
-
-      res.json({
-        invitation: parsed.invitation,
-        from: parsed.from,
-        goal: parsed.goal,
-        goalCode: parsed.goalCode,
-        isExpired: parsed.isExpired,
-        attachments: parsed.attachments,
-      });
-    } catch (error: any) {
-      logger.error('Error accepting OOB invitation:', error);
       res.status(500).json({ error: error.message });
     }
   });
