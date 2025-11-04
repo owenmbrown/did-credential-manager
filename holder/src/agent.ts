@@ -96,7 +96,7 @@ export class HolderAgent {
     if (!this.holderDid) {
       throw new Error('Agent not initialized. Call initialize() first.');
     }
-    return this.holderDid;
+    return this.holderDid!;
   }
 
   /**

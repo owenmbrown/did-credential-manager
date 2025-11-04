@@ -1,5 +1,5 @@
 const base = import.meta.env.VITE_VERIFIER_BASE_URL || 'http://localhost:5002'
-async function j<T>(res: Response): Promise<T> { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json() }
+async function j<T>(res: Response): Promise<T> { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json() as Promise<T> }
 
 export const api = {
   did: () => fetch(`${base}/did`).then((r) => j<{ did: string }>(r)),
