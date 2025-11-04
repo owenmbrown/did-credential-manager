@@ -3,6 +3,7 @@ export default {
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^didcomm$': '<rootDir>/mocks/didcomm.js',
   },
   transform: {
     '^.+\\.tsx?$': [
@@ -16,6 +17,9 @@ export default {
       },
     ],
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(didcomm|@stablelib|@noble)/)',
+  ],
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
   testEnvironment: 'node',
   testMatch: ['**/__tests__/**/*.test.ts', '**/*.test.ts'],
@@ -25,6 +29,7 @@ export default {
     '!src/server.ts',
     '!src/**/*.test.ts',
     '!src/test-setup.ts',
+    '!mocks/**/**',
   ],
   coverageThreshold: {
     'src/routes/**/*.ts': {

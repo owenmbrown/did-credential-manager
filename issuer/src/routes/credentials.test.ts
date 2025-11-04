@@ -90,6 +90,7 @@ describe('Credential Routes', () => {
 
   afterEach(() => {
     jest.clearAllTimers();
+    jest.clearAllMocks();
   });
 
   describe('GET /did', () => {
