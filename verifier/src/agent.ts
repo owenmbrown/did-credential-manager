@@ -101,7 +101,7 @@ export class VerifierAgent {
       );
       logger.info(`Verifier DID created: ${this.verifierDid}`);
     }
-    return this.verifierDid;
+    return this.verifierDid!;
   }
 
   /**
@@ -111,7 +111,7 @@ export class VerifierAgent {
     if (!this.verifierDid) {
       throw new Error('Agent not initialized. Call initialize() first.');
     }
-    return this.verifierDid;
+    return this.verifierDid!;
   }
 
   /**

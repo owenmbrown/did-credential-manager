@@ -39,7 +39,7 @@
     "test:docker": "docker-compose up -d && sleep 10 && ./demo-test.sh && docker-compose down",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "npm run build:common && tsc --noEmit",
     "clean": "npm run clean --workspaces --if-present && rm -rf node_modules"
   },
   "devDependencies": {

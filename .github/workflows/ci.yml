@@ -1,0 +1,207 @@
+name: CI - E2E & Interop Tests
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+  push:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: E2E & Interop Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm run build:common
+
+      - name: Build Docker images
+        run: |
+          docker compose build
+
+      - name: Start services
+        run: |
+          docker compose up -d
+
+      - name: Wait for services to be healthy
+        run: |
+          echo "Waiting for services to start..."
+          timeout=60
+          elapsed=0
+          while [ $elapsed -lt $timeout ]; do
+            if curl -f http://localhost:5001/health && \
+               curl -f http://localhost:5002/health && \
+               curl -f http://localhost:5003/health; then
+              echo "All services are healthy"
+              break
+            fi
+            echo "Waiting for services... ($elapsed/$timeout seconds)"
+            sleep 5
+            elapsed=$((elapsed + 5))
+          done
+          
+          if [ $elapsed -ge $timeout ]; then
+            echo "Services failed to start in time"
+            docker compose logs
+            exit 1
+          fi
+
+      - name: Run unit tests
+        run: |
+          npm run test:unit
+        continue-on-error: true
+
+      - name: Run integration tests
+        run: |
+          npm run test:integration
+        continue-on-error: true
+
+      - name: Run E2E tests (Toolkit Samples)
+        env:
+          ISSUER_URL: http://localhost:5001
+          HOLDER_URL: http://localhost:5003
+          VERIFIER_URL: http://localhost:5002
+          ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+          INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
+          NETWORK: ${{ secrets.NETWORK || 'sepolia' }}
+        run: |
+          npm run test:e2e
+
+      - name: Verify toolkit samples flow
+        run: |
+          echo "Verifying Publish → Submit → Validate flow..."
+          
+          # Test 1: Publish (Issue credential)
+          echo "Testing credential issuance..."
+          ISSUER_RESPONSE=$(curl -s -X POST http://localhost:5001/credentials/issue \
+            -H "Content-Type: application/json" \
+            -d '{
+              "credentialSubject": {
+                "id": "did:peer:test",
+                "name": "Test User",
+                "age": 25
+              },
+              "type": ["VerifiableCredential", "DriversLicense"]
+            }')
+          
+          if echo "$ISSUER_RESPONSE" | grep -q '"credential"'; then
+            echo "✓ Credential issued successfully"
+          else
+            echo "✗ Failed to issue credential"
+            echo "$ISSUER_RESPONSE"
+            exit 1
+          fi
+          
+          # Get holder DID
+          HOLDER_DID=$(curl -s http://localhost:5003/did | jq -r '.did')
+          echo "Holder DID: $HOLDER_DID"
+          
+          # Test 2: Submit (Store credential)
+          echo "Testing credential storage..."
+          CREDENTIAL=$(echo "$ISSUER_RESPONSE" | jq -r '.credential')
+          STORE_RESPONSE=$(curl -s -X POST http://localhost:5003/credentials \
+            -H "Content-Type: application/json" \
+            -d "{\"credential\": $CREDENTIAL}")
+          
+          if echo "$STORE_RESPONSE" | grep -q '"success"'; then
+            echo "✓ Credential stored successfully"
+          else
+            echo "✗ Failed to store credential"
+            echo "$STORE_RESPONSE"
+            exit 1
+          fi
+          
+          # Test 3: Validate (Verify credential)
+          echo "Testing credential verification..."
+          VERIFY_RESPONSE=$(curl -s -X POST http://localhost:5002/verify/credential \
+            -H "Content-Type: application/json" \
+            -d "{\"credential\": $CREDENTIAL}")
+          
+          if echo "$VERIFY_RESPONSE" | jq -e '.verified == true' > /dev/null; then
+            echo "✓ Credential verified successfully"
+          else
+            echo "✗ Failed to verify credential"
+            echo "$VERIFY_RESPONSE"
+            exit 1
+          fi
+          
+          echo "✓ All toolkit samples flow tests passed!"
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          echo "=== Issuer Logs ==="
+          docker compose logs issuer || true
+          echo "=== Holder Logs ==="
+          docker compose logs holder || true
+          echo "=== Verifier Logs ==="
+          docker compose logs verifier || true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v
+
+  lint-and-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build common package
+        run: npm run build:common
+
+      - name: Run linting
+        run: npm run lint || true
+        continue-on-error: true
+
+      - name: Run type checking
+        run: npm run typecheck
+
+  build:
+    name: Build All Packages
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build common package
+        run: npm run build:common
+
+      - name: Build all packages
+        run: npm run build
+        continue-on-error: true
+

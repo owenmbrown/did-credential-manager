@@ -117,7 +117,7 @@ export interface TrustPingMessage extends BaseDIDCommMessage {
  */
 export interface TrustPingResponseMessage extends BaseDIDCommMessage {
   type: 'https://didcomm.org/trust-ping/2.0/ping-response';
-  body: {};
+  body: Record<string, never>;
 }
 
 /**
