@@ -36,9 +36,6 @@ export * from './protocols/index.js';
 // Messaging exports
 export * from './messaging/index.js';
 
-// DID On-Chain exports
-export * from './did-onchain/index.js';
-
 // Re-export commonly used types from didcomm library
 export type {
   DIDResolver,
