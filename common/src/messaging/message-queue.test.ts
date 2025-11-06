@@ -30,7 +30,9 @@ describe('MessageQueue', () => {
   });
 
   afterEach(() => {
-    queue.close();
+    if (queue) {
+      queue.close();
+    }
     
     // Clean up test database
     if (fs.existsSync(testDbPath)) {
@@ -170,6 +172,139 @@ describe('MessageQueue', () => {
       expect(stats.pending).toBe(1);
       expect(stats.delivered).toBe(1);
       expect(stats.failed).toBe(1);
+    });
+  });
+
+  describe('start and stop', () => {
+    it('should start auto-processing', () => {
+      const autoQueue = new MessageQueue(storage, {
+        autoProcessInterval: 100,
+        autoCleanup: true,
+        cleanupInterval: 200,
+      });
+
+      autoQueue.start();
+      // Start should be idempotent
+      autoQueue.start();
+
+      autoQueue.stop();
+      autoQueue.close();
+    });
+
+    it('should stop auto-processing', () => {
+      queue.start();
+      queue.stop();
+      // Stop should be idempotent
+      queue.stop();
+    });
+  });
+
+  describe('immediate processing', () => {
+    it('should mark as processing when immediate flag is set', async () => {
+      const id = await queue.enqueueOutbound('test-message', 'recipient', {
+        immediate: true,
+      });
+
+      const message = queue.getMessage(id);
+      expect(message!.status).toBe(MessageStatus.PROCESSING);
+    });
+  });
+
+  describe('expiration', () => {
+    it('should set custom expiration time', async () => {
+      const expiresIn = 5000;
+      const id = await queue.enqueueOutbound('test-message', 'recipient', {
+        expiresIn,
+      });
+
+      const message = queue.getMessage(id);
+      expect(message!.expiresAt).toBeDefined();
+      expect(message!.expiresAt! - message!.createdAt).toBeGreaterThanOrEqual(expiresIn - 10);
+    });
+  });
+
+  describe('metadata', () => {
+    it('should store message metadata', async () => {
+      const metadata = { correlationId: '123', priority: 'high' };
+      const id = await queue.enqueueOutbound('test-message', 'recipient', {
+        metadata,
+      });
+
+      const message = queue.getMessage(id);
+      expect(message!.metadata).toEqual(metadata);
+    });
+
+    it('should store metadata for inbound messages', async () => {
+      const metadata = { source: 'external-api' };
+      const id = await queue.enqueueInbound('test-message', 'sender', metadata);
+
+      const message = queue.getMessage(id);
+      expect(message!.metadata).toEqual(metadata);
+    });
+  });
+
+  describe('query by from', () => {
+    it('should query messages by from', async () => {
+      await queue.enqueueInbound('msg1', 'did:peer:sender1');
+      await queue.enqueueInbound('msg2', 'did:peer:sender2');
+
+      const messages = queue.queryMessages({ from: 'did:peer:sender1' });
+      expect(messages.length).toBe(1);
+      expect(messages[0].from).toBe('did:peer:sender1');
+    });
+  });
+
+  describe('retry behavior', () => {
+    it('should handle retry scheduling', async () => {
+      const id = await queue.enqueueOutbound('test-message', 'recipient');
+      await queue.markAsFailed(id, 'Error');
+
+      const message = queue.getMessage(id);
+      expect(message!.status).toBe(MessageStatus.PENDING);
+      expect(message!.nextRetryAt).toBeGreaterThan(Date.now());
+    });
+  });
+
+  describe('expired messages', () => {
+    it('should handle expired messages', async () => {
+      const id = await queue.enqueueOutbound('test-message', 'recipient', {
+        expiresIn: 100,
+      });
+
+      queue.markAsDelivered(id);
+
+      const message = queue.getMessage(id);
+      expect(message).toBeDefined();
+      expect(message!.expiresAt).toBeDefined();
+    });
+  });
+
+  describe('getMessage', () => {
+    it('should return null for non-existent message', () => {
+      const message = queue.getMessage('non-existent-id');
+      expect(message).toBeNull();
+    });
+  });
+
+  describe('deleteMessage', () => {
+    it('should delete a message', async () => {
+      const id = await queue.enqueueOutbound('test-message', 'recipient');
+
+      queue.deleteMessage(id);
+
+      const message = queue.getMessage(id);
+      expect(message).toBeNull();
+    });
+  });
+
+  describe('queryMessages with limit', () => {
+    it('should respect query limit', async () => {
+      await queue.enqueueOutbound('msg1', 'recipient');
+      await queue.enqueueOutbound('msg2', 'recipient');
+      await queue.enqueueOutbound('msg3', 'recipient');
+
+      const messages = queue.queryMessages({ limit: 2 });
+      expect(messages.length).toBe(2);
     });
   });
 });

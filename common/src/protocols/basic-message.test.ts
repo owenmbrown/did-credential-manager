@@ -300,6 +300,9 @@ describe('BasicMessageProtocol', () => {
         content: 'Second',
       });
 
+      // Manually adjust timestamp to ensure correct ordering
+      msg2.created_time = (msg1.created_time || 0) + 1000;
+
       const msg3 = BasicMessageProtocol.createMessage({
         from: senderDid,
         to: recipientDid,
@@ -312,8 +315,9 @@ describe('BasicMessageProtocol', () => {
       const threadMessages = BasicMessageProtocol.getThreadMessages(messages, threadId);
 
       expect(threadMessages).toHaveLength(2);
-      expect(threadMessages[0]).toBe(msg1); // First in chronological order
-      expect(threadMessages[1]).toBe(msg2);
+      // Messages should be sorted by created_time
+      expect(threadMessages[0].body.content).toBe('First');
+      expect(threadMessages[1].body.content).toBe('Second');
     });
   });
 

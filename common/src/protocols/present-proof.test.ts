@@ -95,7 +95,7 @@ describe('PresentProofProtocol', () => {
       
       const def = request.attachments[0].data.json?.presentation_definition;
       expect(def).toBeDefined();
-      expect(def.input_descriptors).toHaveLength(2);
+      expect(def!.input_descriptors).toHaveLength(2);
     });
   });
 

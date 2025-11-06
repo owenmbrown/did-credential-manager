@@ -22,7 +22,7 @@ export class MessageStorage {
 
   constructor(config: MessageStorageConfig) {
     this.db = new Database(config.dbPath, {
-      readonly: config.readonly,
+      readonly: config.readonly ?? false,
       fileMustExist: false,
     });
 
@@ -196,6 +196,9 @@ export class MessageStorage {
       id,
       status,
       updatedAt: Date.now(),
+      sentAt: null,
+      deliveredAt: null,
+      lastError: null,
     };
 
     if (status === MessageStatus.SENT) {
