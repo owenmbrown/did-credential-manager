@@ -12,6 +12,13 @@
 
 A decentralized identity (DID) credential management system demonstrating issuance, holding, and verification of verifiable credentials using DID:peer and DIDComm v2.
 
+## User Acceptance Testing (UAT)
+
+For a guided testing experience with step-by-step instructions, see the testing documentation in the `docs/` folder:
+- **[Setup Guide](./docs/SETUP.md)** - Complete setup instructions for Docker
+- **[End-to-End Flow Guide](./docs/END_TO_END_FLOW.md)** - Complete testing workflow with troubleshooting
+- **[Full Project Specs](./docs/FULL_PROJECT_SPECS.md)** - Detailed technical specifications
+
 ## Quick Start
 
 The **recommended way** to run everything is using Docker, which runs all services (backends + web apps):

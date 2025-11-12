@@ -16,31 +16,31 @@ export default function Apply() {
   const [did, setDid] = useState<string>('')
 
   // Subject DID (holder DID)
-  const [subjectId, setSubjectId] = useState('did:peer:holder')
+  const [subjectId, setSubjectId] = useState('')
 
   // Person info (DMV style)
-  const [firstName, setFirstName] = useState('Alice')
-  const [lastName, setLastName] = useState('Wang')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [middleName, setMiddleName] = useState('')
-  const [dob, setDob] = useState('1995-01-01') // YYYY-MM-DD
-  const [gender, setGender] = useState('F') // M / F / X
-  const [eyeColor, setEyeColor] = useState('Brown')
+  const [dob, setDob] = useState('') // YYYY-MM-DD
+  const [gender, setGender] = useState('') // M / F / X
+  const [eyeColor, setEyeColor] = useState('')
   const [heightCm, setHeightCm] = useState<number | ''>('')
-  const [emails, setEmails] = useState('alice@example.com')
+  const [emails, setEmails] = useState('')
 
   // Address
   const [address, setAddress] = useState<Address>({
-    street: '123 Main St',
-    city: 'Seattle',
-    state: 'WA',
-    postalCode: '98101',
-    country: 'US',
+    street: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: '',
   })
 
   // Application fields (apply for driver license)
   const [applicationId, setApplicationId] = useState(() => `APP-${new Date().getFullYear()}-${Math.floor(Math.random()*9000+1000)}`)
-  const [phone, setPhone] = useState('206-555-0101')
-  const [ssnLast4, setSsnLast4] = useState('1234')
+  const [phone, setPhone] = useState('')
+  const [ssnLast4, setSsnLast4] = useState('')
   const [isOrganDonor, setIsOrganDonor] = useState(false)
   const [residencyYears, setResidencyYears] = useState<number | ''>('')
   const [hasVisionTest, setHasVisionTest] = useState(false)
